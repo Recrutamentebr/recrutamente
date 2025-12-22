@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ChevronLeft, Upload, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
-import { jobs } from "@/data/jobs";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+
+interface Job {
+  id: string;
+  title: string;
+  city: string;
+  state: string;
+}
 
 const escolaridade = [
   "Ensino Fundamental",
@@ -33,16 +40,35 @@ const CandidaturaPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const job = jobs.find((j) => j.id === id);
 
+  const [job, setJob] = useState<Job | null>(null);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [fileName, setFileName] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    fetchJobs();
+  }, [id]);
+
+  const fetchJobs = async () => {
+    const { data } = await supabase
+      .from("jobs")
+      .select("id, title, city, state")
+      .eq("is_active", true);
+    
+    setJobs(data || []);
+    if (id && data) {
+      const found = data.find((j) => j.id === id);
+      setJob(found || null);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      if (selectedFile.size > 5 * 1024 * 1024) {
         toast({
           title: "Arquivo muito grande",
           description: "O arquivo deve ter no máximo 5MB.",
@@ -50,24 +76,10 @@ const CandidaturaPage = () => {
         });
         return;
       }
-      setFileName(file.name);
+      setFile(selectedFile);
+      setFileName(selectedFile.name);
     }
   };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-
-    toast({
-      title: "Candidatura enviada!",
-      description: "Sua candidatura foi registrada com sucesso. Entraremos em contato em breve.",
-    });
   };
 
   if (isSubmitted) {
@@ -205,7 +217,7 @@ const CandidaturaPage = () => {
                         <label className="text-sm font-medium text-foreground">
                           Vaga de Interesse *
                         </label>
-                        <Select defaultValue={job?.id} required>
+                        <Select name="vaga" defaultValue={job?.id} required>
                           <SelectTrigger className="bg-background h-12">
                             <SelectValue placeholder="Selecione uma vaga" />
                           </SelectTrigger>
@@ -215,9 +227,6 @@ const CandidaturaPage = () => {
                                 {j.title} - {j.city}/{j.state}
                               </SelectItem>
                             ))}
-                            <SelectItem value="banco-talentos">
-                              Cadastro no Banco de Talentos (sem vaga específica)
-                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -225,7 +234,7 @@ const CandidaturaPage = () => {
                         <label className="text-sm font-medium text-foreground">
                           Nível de Escolaridade *
                         </label>
-                        <Select required>
+                        <Select name="escolaridade" required>
                           <SelectTrigger className="bg-background h-12">
                             <SelectValue placeholder="Selecione" />
                           </SelectTrigger>
@@ -252,7 +261,7 @@ const CandidaturaPage = () => {
                         <label className="text-sm font-medium text-foreground">
                           Disponibilidade para Início *
                         </label>
-                        <Select required>
+                        <Select name="disponibilidade" required>
                           <SelectTrigger className="bg-background h-12">
                             <SelectValue placeholder="Selecione" />
                           </SelectTrigger>
