@@ -1,13 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Search, MapPin, Briefcase, ChevronRight, Filter, ChevronLeft } from "lucide-react";
+import { Search, MapPin, Briefcase, ChevronRight, Filter, ChevronLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
-import { jobs, areas, cities, states, types, levels, Job } from "@/data/jobs";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Job {
+  id: string;
+  title: string;
+  description: string;
+  area: string;
+  city: string;
+  state: string;
+  type: string;
+  level: string;
+}
 
 interface JobCardProps {
   job: Job;
@@ -53,12 +64,41 @@ function JobCard({ job }: JobCardProps) {
 }
 
 const VagasPage = () => {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedArea, setSelectedArea] = useState<string>("");
   const [selectedCity, setSelectedCity] = useState<string>("");
   const [selectedType, setSelectedType] = useState<string>("");
   const [selectedLevel, setSelectedLevel] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
+
+  useEffect(() => {
+    fetchJobs();
+  }, []);
+
+  const fetchJobs = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("jobs")
+        .select("id, title, description, area, city, state, type, level")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setJobs(data || []);
+    } catch (error) {
+      console.error("Error fetching jobs:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get unique values for filters
+  const areas = [...new Set(jobs.map((j) => j.area))];
+  const cities = [...new Set(jobs.map((j) => j.city))];
+  const types = [...new Set(jobs.map((j) => j.type))];
+  const levels = [...new Set(jobs.map((j) => j.level))];
 
   const filteredJobs = jobs.filter((job) => {
     const matchesSearch =
@@ -200,21 +240,34 @@ const VagasPage = () => {
 
             {/* Results */}
             <div className="space-y-4">
-              <div className="text-muted-foreground text-sm mb-4">
-                {filteredJobs.length} vaga{filteredJobs.length !== 1 ? "s" : ""} encontrada{filteredJobs.length !== 1 ? "s" : ""}
-              </div>
-
-              {filteredJobs.length > 0 ? (
-                filteredJobs.map((job) => <JobCard key={job.id} job={job} />)
-              ) : (
-                <div className="text-center py-16 bg-card rounded-2xl border border-border">
-                  <p className="text-muted-foreground text-lg">
-                    Nenhuma vaga encontrada com os filtros selecionados.
-                  </p>
-                  <Button variant="outline" className="mt-4" onClick={clearFilters}>
-                    Limpar filtros
-                  </Button>
+              {loading ? (
+                <div className="flex justify-center py-16">
+                  <Loader2 className="animate-spin text-accent" size={32} />
                 </div>
+              ) : (
+                <>
+                  <div className="text-muted-foreground text-sm mb-4">
+                    {filteredJobs.length} vaga{filteredJobs.length !== 1 ? "s" : ""} encontrada{filteredJobs.length !== 1 ? "s" : ""}
+                  </div>
+
+                  {filteredJobs.length > 0 ? (
+                    filteredJobs.map((job) => <JobCard key={job.id} job={job} />)
+                  ) : (
+                    <div className="text-center py-16 bg-card rounded-2xl border border-border">
+                      <Briefcase className="mx-auto text-muted-foreground mb-4" size={48} />
+                      <p className="text-muted-foreground text-lg">
+                        {jobs.length === 0 
+                          ? "Ainda não há vagas cadastradas. Volte em breve!"
+                          : "Nenhuma vaga encontrada com os filtros selecionados."}
+                      </p>
+                      {jobs.length > 0 && (
+                        <Button variant="outline" className="mt-4" onClick={clearFilters}>
+                          Limpar filtros
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

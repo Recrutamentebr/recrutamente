@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { ChevronLeft, Upload, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +38,6 @@ const disponibilidade = [
 
 const CandidaturaPage = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { toast } = useToast();
 
   const [job, setJob] = useState<Job | null>(null);
@@ -47,6 +46,7 @@ const CandidaturaPage = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [fileName, setFileName] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [selectedJobId, setSelectedJobId] = useState<string>("");
 
   useEffect(() => {
     fetchJobs();
@@ -62,6 +62,7 @@ const CandidaturaPage = () => {
     if (id && data) {
       const found = data.find((j) => j.id === id);
       setJob(found || null);
+      if (found) setSelectedJobId(found.id);
     }
   };
 
@@ -80,6 +81,69 @@ const CandidaturaPage = () => {
       setFileName(selectedFile.name);
     }
   };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const formData = new FormData(e.currentTarget);
+
+      if (!selectedJobId) {
+        toast({
+          title: "Selecione uma vaga",
+          description: "Por favor, selecione uma vaga de interesse.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      let resumeUrl = null;
+      if (file) {
+        const fileExt = file.name.split(".").pop();
+        const filePath = `${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from("resumes")
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+        resumeUrl = filePath;
+      }
+
+      const { error } = await supabase.from("applications").insert({
+        job_id: selectedJobId,
+        full_name: formData.get("nome") as string,
+        email: formData.get("email") as string,
+        phone: formData.get("telefone") as string,
+        city: formData.get("cidade") as string,
+        state: formData.get("estado") as string,
+        education_level: formData.get("escolaridade") as string,
+        experience: formData.get("experiencia") as string,
+        salary_expectation: formData.get("pretensao") as string || null,
+        availability: formData.get("disponibilidade") as string || null,
+        additional_info: formData.get("observacoes") as string || null,
+        resume_url: resumeUrl,
+      });
+
+      if (error) throw error;
+
+      setIsSubmitted(true);
+      toast({
+        title: "Candidatura enviada!",
+        description: "Sua candidatura foi registrada com sucesso.",
+      });
+    } catch (error) {
+      console.error("Error submitting application:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível enviar sua candidatura. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isSubmitted) {
@@ -217,7 +281,7 @@ const CandidaturaPage = () => {
                         <label className="text-sm font-medium text-foreground">
                           Vaga de Interesse *
                         </label>
-                        <Select name="vaga" defaultValue={job?.id} required>
+                        <Select value={selectedJobId} onValueChange={setSelectedJobId} required>
                           <SelectTrigger className="bg-background h-12">
                             <SelectValue placeholder="Selecione uma vaga" />
                           </SelectTrigger>
@@ -295,22 +359,6 @@ const CandidaturaPage = () => {
                       Informações Adicionais
                     </h2>
                     <div className="space-y-6">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground">
-                          Disponibilidade de horário
-                        </label>
-                        <Select>
-                          <SelectTrigger className="bg-background h-12">
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="comercial">Horário comercial</SelectItem>
-                            <SelectItem value="flexivel">Horário flexível</SelectItem>
-                            <SelectItem value="turnos">Disponível para turnos</SelectItem>
-                            <SelectItem value="noturno">Disponível para horário noturno</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-foreground">
                           Observações ou informações adicionais

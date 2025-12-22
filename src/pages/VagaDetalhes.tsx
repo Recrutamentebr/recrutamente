@@ -1,15 +1,74 @@
+import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ChevronLeft, MapPin, Briefcase, Clock, DollarSign, CheckCircle } from "lucide-react";
+import { ChevronLeft, MapPin, Briefcase, Clock, CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
-import { jobs } from "@/data/jobs";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Job {
+  id: string;
+  title: string;
+  description: string;
+  requirements: string | null;
+  responsibilities: string | null;
+  benefits: string | null;
+  area: string;
+  city: string;
+  state: string;
+  type: string;
+  level: string;
+  salary_range: string | null;
+  created_at: string;
+}
 
 const VagaDetalhes = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const job = jobs.find((j) => j.id === id);
+  const [job, setJob] = useState<Job | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchJob();
+  }, [id]);
+
+  const fetchJob = async () => {
+    if (!id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("jobs")
+        .select("*")
+        .eq("id", id)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (error) throw error;
+      setJob(data);
+    } catch (error) {
+      console.error("Error fetching job:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const parseTextToList = (text: string | null): string[] => {
+    if (!text) return [];
+    return text.split("\n").filter((line) => line.trim().length > 0);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main className="flex-1 pt-20 flex items-center justify-center">
+          <Loader2 className="animate-spin text-accent" size={48} />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!job) {
     return (
@@ -27,6 +86,10 @@ const VagaDetalhes = () => {
       </div>
     );
   }
+
+  const requirements = parseTextToList(job.requirements);
+  const responsibilities = parseTextToList(job.responsibilities);
+  const benefits = parseTextToList(job.benefits);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -67,7 +130,7 @@ const VagaDetalhes = () => {
               </span>
               <span className="flex items-center gap-2">
                 <Clock size={18} />
-                Publicada em {new Date(job.createdAt).toLocaleDateString("pt-BR")}
+                Publicada em {new Date(job.created_at).toLocaleDateString("pt-BR")}
               </span>
             </div>
           </div>
@@ -82,47 +145,53 @@ const VagaDetalhes = () => {
                 {/* Description */}
                 <div className="bg-card rounded-2xl p-8 shadow-card border border-border">
                   <h2 className="font-bold text-xl text-foreground mb-4">Descrição da Vaga</h2>
-                  <p className="text-muted-foreground leading-relaxed">{job.description}</p>
+                  <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{job.description}</p>
                 </div>
 
                 {/* Requirements */}
-                <div className="bg-card rounded-2xl p-8 shadow-card border border-border">
-                  <h2 className="font-bold text-xl text-foreground mb-4">Requisitos</h2>
-                  <ul className="space-y-3">
-                    {job.requirements.map((req, i) => (
-                      <li key={i} className="flex items-start gap-3 text-muted-foreground">
-                        <CheckCircle className="text-accent flex-shrink-0 mt-0.5" size={18} />
-                        {req}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                {requirements.length > 0 && (
+                  <div className="bg-card rounded-2xl p-8 shadow-card border border-border">
+                    <h2 className="font-bold text-xl text-foreground mb-4">Requisitos</h2>
+                    <ul className="space-y-3">
+                      {requirements.map((req, i) => (
+                        <li key={i} className="flex items-start gap-3 text-muted-foreground">
+                          <CheckCircle className="text-accent flex-shrink-0 mt-0.5" size={18} />
+                          {req}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
                 {/* Responsibilities */}
-                <div className="bg-card rounded-2xl p-8 shadow-card border border-border">
-                  <h2 className="font-bold text-xl text-foreground mb-4">Responsabilidades</h2>
-                  <ul className="space-y-3">
-                    {job.responsibilities.map((resp, i) => (
-                      <li key={i} className="flex items-start gap-3 text-muted-foreground">
-                        <CheckCircle className="text-accent flex-shrink-0 mt-0.5" size={18} />
-                        {resp}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                {responsibilities.length > 0 && (
+                  <div className="bg-card rounded-2xl p-8 shadow-card border border-border">
+                    <h2 className="font-bold text-xl text-foreground mb-4">Responsabilidades</h2>
+                    <ul className="space-y-3">
+                      {responsibilities.map((resp, i) => (
+                        <li key={i} className="flex items-start gap-3 text-muted-foreground">
+                          <CheckCircle className="text-accent flex-shrink-0 mt-0.5" size={18} />
+                          {resp}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
                 {/* Benefits */}
-                <div className="bg-card rounded-2xl p-8 shadow-card border border-border">
-                  <h2 className="font-bold text-xl text-foreground mb-4">Benefícios</h2>
-                  <ul className="grid sm:grid-cols-2 gap-3">
-                    {job.benefits.map((benefit, i) => (
-                      <li key={i} className="flex items-center gap-3 text-muted-foreground">
-                        <DollarSign className="text-accent flex-shrink-0" size={18} />
-                        {benefit}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                {benefits.length > 0 && (
+                  <div className="bg-card rounded-2xl p-8 shadow-card border border-border">
+                    <h2 className="font-bold text-xl text-foreground mb-4">Benefícios</h2>
+                    <ul className="grid sm:grid-cols-2 gap-3">
+                      {benefits.map((benefit, i) => (
+                        <li key={i} className="flex items-center gap-3 text-muted-foreground">
+                          <CheckCircle className="text-accent flex-shrink-0" size={18} />
+                          {benefit}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
 
               {/* Sidebar */}
@@ -164,6 +233,12 @@ const VagaDetalhes = () => {
                         <span className="text-muted-foreground">Local</span>
                         <span className="text-foreground font-medium">{job.city}, {job.state}</span>
                       </div>
+                      {job.salary_range && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Salário</span>
+                          <span className="text-foreground font-medium">{job.salary_range}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
