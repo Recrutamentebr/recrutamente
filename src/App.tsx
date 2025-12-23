@@ -14,6 +14,7 @@ import Dashboard from "./pages/Dashboard";
 import NovaVaga from "./pages/NovaVaga";
 import VagaCandidaturas from "./pages/VagaCandidaturas";
 import EditarVaga from "./pages/EditarVaga";
+import EditarPerfil from "./pages/EditarPerfil";
 import ClienteLogin from "./pages/ClienteLogin";
 import ClientePortal from "./pages/ClientePortal";
 import NotFound from "./pages/NotFound";
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/dashboard/nova-vaga" element={<NovaVaga />} />
             <Route path="/dashboard/vagas/:id/candidaturas" element={<VagaCandidaturas />} />
             <Route path="/dashboard/vagas/:id/editar" element={<EditarVaga />} />
+            <Route path="/dashboard/perfil" element={<EditarPerfil />} />
             <Route path="/cliente/login" element={<ClienteLogin />} />
             <Route path="/cliente" element={<ClientePortal />} />
             <Route path="*" element={<NotFound />} />

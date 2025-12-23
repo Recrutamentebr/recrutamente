@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Loader2, Users, Mail, Key, Eye, EyeOff } from "lucide-react";
+import { Plus, Trash2, Loader2, Users, Mail, Key, Eye, EyeOff, Settings, Briefcase, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -26,6 +27,15 @@ interface Client {
   id: string;
   email: string;
   created_at: string;
+  job_ids: string[];
+}
+
+interface Job {
+  id: string;
+  title: string;
+  area: string;
+  city: string;
+  state: string;
 }
 
 interface GerenciarClientesProps {
@@ -41,26 +51,40 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
   const { toast } = useToast();
   
   const [clients, setClients] = useState<Client[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [formErrors, setFormErrors] = useState<{ email?: string; password?: string }>({});
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+  const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
+  const [savingJobs, setSavingJobs] = useState(false);
 
   useEffect(() => {
-    fetchClients();
+    fetchData();
   }, [companyId]);
 
-  const fetchClients = async () => {
+  const fetchData = async () => {
     try {
+      // Fetch jobs for this company
+      const { data: jobsData } = await supabase
+        .from("jobs")
+        .select("id, title, area, city, state")
+        .eq("company_id", companyId)
+        .order("created_at", { ascending: false });
+
+      setJobs(jobsData || []);
+
       // Get client_company_access for this company
       const { data: accessData, error } = await supabase
         .from("client_company_access")
-        .select("client_user_id, created_at")
+        .select("client_user_id, client_email, created_at")
         .eq("company_id", companyId);
 
       if (error) throw error;
@@ -71,21 +95,29 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
         return;
       }
 
-      // We can't directly query auth.users, so we'll store email info differently
-      // For now, we'll use the client_user_id as identifier
-      // In a real app, you might want to store client info in a separate table
-      const clientsList: Client[] = accessData.map(access => ({
-        id: access.client_user_id,
-        email: "Cliente", // Placeholder - will be fetched differently
-        created_at: access.created_at,
-      }));
+      // Fetch job access for each client
+      const clientsList: Client[] = await Promise.all(
+        accessData.map(async (access) => {
+          const { data: jobAccess } = await supabase
+            .from("client_job_access")
+            .select("job_id")
+            .eq("client_user_id", access.client_user_id);
+
+          return {
+            id: access.client_user_id,
+            email: access.client_email || "Email não registrado",
+            created_at: access.created_at,
+            job_ids: jobAccess?.map(j => j.job_id) || [],
+          };
+        })
+      );
 
       setClients(clientsList);
     } catch (error) {
-      console.error("Error fetching clients:", error);
+      console.error("Error fetching data:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível carregar os clientes.",
+        description: "Não foi possível carregar os dados.",
         variant: "destructive",
       });
     } finally {
@@ -97,6 +129,14 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setFormErrors((prev) => ({ ...prev, [name]: undefined }));
+  };
+
+  const handleJobToggle = (jobId: string) => {
+    setSelectedJobs(prev => 
+      prev.includes(jobId) 
+        ? prev.filter(id => id !== jobId)
+        : [...prev, jobId]
+    );
   };
 
   const handleCreateClient = async (e: React.FormEvent) => {
@@ -111,6 +151,15 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
         if (err.path[0] === "password") errors.password = err.message;
       });
       setFormErrors(errors);
+      return;
+    }
+
+    if (selectedJobs.length === 0) {
+      toast({
+        title: "Atenção",
+        description: "Selecione pelo menos uma vaga para o cliente.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -138,16 +187,29 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
         throw new Error("Erro ao criar usuário");
       }
 
-      // Add client_company_access
+      // Add client_company_access with email
       const { error: accessError } = await supabase
         .from("client_company_access")
         .insert({
           client_user_id: signUpData.user.id,
           company_id: companyId,
           created_by: currentUser.id,
+          client_email: formData.email,
         });
 
       if (accessError) throw accessError;
+
+      // Add job access for selected jobs
+      const jobAccessInserts = selectedJobs.map(jobId => ({
+        client_user_id: signUpData.user!.id,
+        job_id: jobId,
+      }));
+
+      const { error: jobAccessError } = await supabase
+        .from("client_job_access")
+        .insert(jobAccessInserts);
+
+      if (jobAccessError) throw jobAccessError;
 
       toast({
         title: "Cliente criado!",
@@ -155,8 +217,9 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
       });
 
       setFormData({ email: "", password: "" });
+      setSelectedJobs([]);
       setDialogOpen(false);
-      fetchClients();
+      fetchData();
     } catch (error: any) {
       console.error("Error creating client:", error);
       let message = "Não foi possível criar o cliente.";
@@ -173,10 +236,69 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
     }
   };
 
+  const handleEditClient = (client: Client) => {
+    setSelectedClient(client);
+    setSelectedJobs(client.job_ids);
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveClientJobs = async () => {
+    if (!selectedClient) return;
+
+    setSavingJobs(true);
+
+    try {
+      // Delete existing job access
+      await supabase
+        .from("client_job_access")
+        .delete()
+        .eq("client_user_id", selectedClient.id);
+
+      // Insert new job access
+      if (selectedJobs.length > 0) {
+        const jobAccessInserts = selectedJobs.map(jobId => ({
+          client_user_id: selectedClient.id,
+          job_id: jobId,
+        }));
+
+        const { error } = await supabase
+          .from("client_job_access")
+          .insert(jobAccessInserts);
+
+        if (error) throw error;
+      }
+
+      toast({
+        title: "Vagas atualizadas!",
+        description: "As permissões do cliente foram atualizadas.",
+      });
+
+      setEditDialogOpen(false);
+      setSelectedClient(null);
+      fetchData();
+    } catch (error) {
+      console.error("Error updating client jobs:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar as vagas.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingJobs(false);
+    }
+  };
+
   const handleDeleteClient = async (clientId: string) => {
     if (!confirm("Tem certeza que deseja remover o acesso deste cliente?")) return;
 
     try {
+      // Delete job access first
+      await supabase
+        .from("client_job_access")
+        .delete()
+        .eq("client_user_id", clientId);
+
+      // Delete company access
       const { error } = await supabase
         .from("client_company_access")
         .delete()
@@ -208,6 +330,13 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
     });
   };
 
+  const getJobNames = (jobIds: string[]) => {
+    return jobIds
+      .map(id => jobs.find(j => j.id === id)?.title)
+      .filter(Boolean)
+      .join(", ");
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-12">
@@ -233,7 +362,7 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
               Novo Cliente
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Criar Novo Cliente</DialogTitle>
             </DialogHeader>
@@ -285,16 +414,41 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
                 )}
               </div>
 
+              <div className="space-y-2">
+                <Label>Vagas que o cliente pode visualizar</Label>
+                {jobs.length > 0 ? (
+                  <div className="border border-border rounded-lg max-h-48 overflow-y-auto">
+                    {jobs.map((job) => (
+                      <div
+                        key={job.id}
+                        className="flex items-center gap-3 p-3 hover:bg-muted/50 border-b border-border last:border-b-0"
+                      >
+                        <Checkbox
+                          id={`job-${job.id}`}
+                          checked={selectedJobs.includes(job.id)}
+                          onCheckedChange={() => handleJobToggle(job.id)}
+                        />
+                        <label htmlFor={`job-${job.id}`} className="flex-1 cursor-pointer">
+                          <p className="font-medium text-foreground text-sm">{job.title}</p>
+                          <p className="text-xs text-muted-foreground">{job.area} • {job.city}, {job.state}</p>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Nenhuma vaga cadastrada.</p>
+                )}
+              </div>
+
               <p className="text-sm text-muted-foreground">
-                O cliente receberá um e-mail de confirmação e poderá acessar o portal em{" "}
-                <strong>/cliente/login</strong>
+                O cliente poderá acessar o portal em <strong>/cliente/login</strong>
               </p>
 
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={creating}>
+                <Button type="submit" disabled={creating || jobs.length === 0}>
                   {creating ? (
                     <>
                       <Loader2 className="animate-spin mr-2" size={18} />
@@ -315,25 +469,42 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID do Cliente</TableHead>
-                <TableHead>Data de Criação</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Vagas</TableHead>
+                <TableHead>Criado em</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {clients.map((client) => (
                 <TableRow key={client.id}>
-                  <TableCell className="font-mono text-sm">{client.id.slice(0, 8)}...</TableCell>
+                  <TableCell className="font-medium">{client.email}</TableCell>
+                  <TableCell>
+                    <span className="text-sm text-muted-foreground">
+                      {client.job_ids.length > 0 
+                        ? `${client.job_ids.length} vaga${client.job_ids.length > 1 ? 's' : ''}`
+                        : "Nenhuma vaga"}
+                    </span>
+                  </TableCell>
                   <TableCell>{formatDate(client.created_at)}</TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDeleteClient(client.id)}
-                    >
-                      <Trash2 size={16} />
-                      Remover Acesso
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditClient(client)}
+                      >
+                        <Settings size={16} />
+                        Vagas
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteClient(client.id)}
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -351,6 +522,65 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
           </p>
         </div>
       )}
+
+      {/* Edit Client Jobs Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Vagas do Cliente</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Cliente: <strong>{selectedClient?.email}</strong>
+            </p>
+            
+            <div className="space-y-2">
+              <Label>Vagas que o cliente pode visualizar</Label>
+              {jobs.length > 0 ? (
+                <div className="border border-border rounded-lg max-h-64 overflow-y-auto">
+                  {jobs.map((job) => (
+                    <div
+                      key={job.id}
+                      className="flex items-center gap-3 p-3 hover:bg-muted/50 border-b border-border last:border-b-0"
+                    >
+                      <Checkbox
+                        id={`edit-job-${job.id}`}
+                        checked={selectedJobs.includes(job.id)}
+                        onCheckedChange={() => handleJobToggle(job.id)}
+                      />
+                      <label htmlFor={`edit-job-${job.id}`} className="flex-1 cursor-pointer">
+                        <p className="font-medium text-foreground text-sm">{job.title}</p>
+                        <p className="text-xs text-muted-foreground">{job.area} • {job.city}, {job.state}</p>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Nenhuma vaga cadastrada.</p>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSaveClientJobs} disabled={savingJobs}>
+                {savingJobs ? (
+                  <>
+                    <Loader2 className="animate-spin mr-2" size={18} />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Check size={18} />
+                    Salvar
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
