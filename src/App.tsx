@@ -14,6 +14,8 @@ import Dashboard from "./pages/Dashboard";
 import NovaVaga from "./pages/NovaVaga";
 import VagaCandidaturas from "./pages/VagaCandidaturas";
 import EditarVaga from "./pages/EditarVaga";
+import ClienteLogin from "./pages/ClienteLogin";
+import ClientePortal from "./pages/ClientePortal";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +38,8 @@ const App = () => (
             <Route path="/dashboard/nova-vaga" element={<NovaVaga />} />
             <Route path="/dashboard/vagas/:id/candidaturas" element={<VagaCandidaturas />} />
             <Route path="/dashboard/vagas/:id/editar" element={<EditarVaga />} />
+            <Route path="/cliente/login" element={<ClienteLogin />} />
+            <Route path="/cliente" element={<ClientePortal />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

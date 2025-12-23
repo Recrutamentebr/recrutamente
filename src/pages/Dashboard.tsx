@@ -11,7 +11,8 @@ import {
   Trash2,
   ChevronRight,
   Loader2,
-  Building2
+  Building2,
+  UserPlus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/Header";
@@ -20,6 +21,7 @@ import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import GerenciarClientes from "@/components/GerenciarClientes";
 
 interface Job {
   id: string;
@@ -41,7 +43,7 @@ const DashboardPage = () => {
   
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(true);
-  const [activeTab, setActiveTab] = useState<"jobs" | "profile">("jobs");
+  const [activeTab, setActiveTab] = useState<"jobs" | "profile" | "clients">("jobs");
 
   useEffect(() => {
     if (!loading && !user) {
@@ -229,13 +231,20 @@ const DashboardPage = () => {
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-4 mb-6">
+            <div className="flex flex-wrap gap-4 mb-6">
               <Button
                 variant={activeTab === "jobs" ? "default" : "outline"}
                 onClick={() => setActiveTab("jobs")}
               >
                 <Briefcase size={18} />
                 Minhas Vagas
+              </Button>
+              <Button
+                variant={activeTab === "clients" ? "default" : "outline"}
+                onClick={() => setActiveTab("clients")}
+              >
+                <UserPlus size={18} />
+                Gerenciar Clientes
               </Button>
               <Button
                 variant={activeTab === "profile" ? "default" : "outline"}
@@ -347,6 +356,11 @@ const DashboardPage = () => {
                   </div>
                 )}
               </div>
+            )}
+
+            {/* Clients Tab */}
+            {activeTab === "clients" && (
+              <GerenciarClientes companyId={company.id} />
             )}
 
             {/* Profile Tab */}
