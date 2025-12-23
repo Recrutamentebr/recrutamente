@@ -197,7 +197,8 @@ export const generateCandidatePDF = async (
 // Simplified PDF generation for the candidate report
 export const generateSimplePDF = async (
   reportElement: HTMLElement,
-  candidateName: string
+  candidateName: string,
+  resumeUrl?: string | null
 ): Promise<void> => {
   try {
     const canvas = await html2canvas(reportElement, {
@@ -225,6 +226,22 @@ export const generateSimplePDF = async (
       imgWidth,
       imgHeight
     );
+
+    // Add clickable link for resume if URL exists
+    if (resumeUrl) {
+      // Calculate the position of the resume button based on the scale
+      // The resume section is approximately at 60% of the first page
+      const scaleRatio = imgWidth / canvas.width;
+      // Position the link over the "BAIXAR CURRÍCULO" button area
+      // These values are approximated based on the PDF layout
+      const linkX = 45; // Start from left margin
+      const linkY = 165; // Approximate Y position of the button
+      const linkWidth = 120; // Width of the clickable area
+      const linkHeight = 20; // Height of the clickable area
+      
+      pdf.link(linkX, linkY, linkWidth, linkHeight, { url: resumeUrl });
+    }
+    
     heightLeft -= pageHeight;
     
     while (heightLeft > 0) {
