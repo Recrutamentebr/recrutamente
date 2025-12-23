@@ -59,7 +59,7 @@ export function ContactSection() {
               </a>
 
               <a
-                href="mailto:contato@recrutamente.com.br"
+                href="mailto:denys@recrutamente.site"
                 className="flex items-center gap-4 p-4 bg-card rounded-xl border border-border hover:border-accent transition-colors group"
               >
                 <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center group-hover:bg-accent-gradient transition-all">
@@ -67,7 +67,7 @@ export function ContactSection() {
                 </div>
                 <div>
                   <div className="font-semibold text-foreground">E-mail</div>
-                  <div className="text-muted-foreground">contato@recrutamente.com.br</div>
+                  <div className="text-muted-foreground">denys@recrutamente.site</div>
                 </div>
               </a>
 
