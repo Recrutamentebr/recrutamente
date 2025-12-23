@@ -120,12 +120,11 @@ const CandidateCard = ({ application, job }: { application: Application; job?: J
     <div
       style={{
         width: "100%",
-        height: "540px", // Half of A4 height approximately
-        padding: "24px 32px",
+        height: "516px", // (1123 - 50 header - 40 footer) / 2 = ~516px per candidate
+        padding: "16px 28px",
         boxSizing: "border-box",
-        borderBottom: "2px dashed #E5E7EB",
+        borderBottom: "1px dashed #D1D5DB",
         position: "relative",
-        overflow: "hidden",
       }}
     >
       {/* Header with Name and Status */}
@@ -134,7 +133,7 @@ const CandidateCard = ({ application, job }: { application: Application; job?: J
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-start",
-          marginBottom: "16px",
+          marginBottom: "10px",
         }}
       >
         <div style={{ flex: 1 }}>
@@ -142,22 +141,22 @@ const CandidateCard = ({ application, job }: { application: Application; job?: J
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "12px",
-              marginBottom: "8px",
+              gap: "10px",
             }}
           >
             <div
               style={{
-                width: "48px",
-                height: "48px",
+                width: "40px",
+                height: "40px",
                 borderRadius: "50%",
                 background: "linear-gradient(135deg, #1E3A8A, #2563EB)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "20px",
+                fontSize: "16px",
                 fontWeight: "700",
                 color: "#FFFFFF",
+                flexShrink: 0,
               }}
             >
               {application.full_name.charAt(0).toUpperCase()}
@@ -165,7 +164,7 @@ const CandidateCard = ({ application, job }: { application: Application; job?: J
             <div>
               <h2
                 style={{
-                  fontSize: "20px",
+                  fontSize: "16px",
                   fontWeight: "700",
                   color: "#1F2937",
                   margin: 0,
@@ -173,7 +172,7 @@ const CandidateCard = ({ application, job }: { application: Application; job?: J
               >
                 {application.full_name}
               </h2>
-              <p style={{ fontSize: "12px", color: "#6B7280", margin: "2px 0 0 0" }}>
+              <p style={{ fontSize: "10px", color: "#6B7280", margin: "2px 0 0 0" }}>
                 {application.email} • {application.phone}
               </p>
             </div>
@@ -202,14 +201,14 @@ const CandidateCard = ({ application, job }: { application: Application; job?: J
       {job && (
         <div
           style={{
-            padding: "10px 16px",
+            padding: "6px 12px",
             backgroundColor: "#ECFDF5",
-            borderRadius: "8px",
-            marginBottom: "14px",
+            borderRadius: "6px",
+            marginBottom: "10px",
             display: "inline-block",
           }}
         >
-          <span style={{ fontSize: "12px", color: "#047857", fontWeight: "600" }}>
+          <span style={{ fontSize: "10px", color: "#047857", fontWeight: "600" }}>
             💼 {job.title} • {job.area} • {job.level}
           </span>
         </div>
@@ -220,62 +219,62 @@ const CandidateCard = ({ application, job }: { application: Application; job?: J
         style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr 1fr 1fr",
-          gap: "10px",
-          marginBottom: "14px",
+          gap: "6px",
+          marginBottom: "10px",
         }}
       >
-        <div style={{ padding: "10px", backgroundColor: "#F8FAFC", borderRadius: "6px", textAlign: "center" }}>
-          <p style={{ fontSize: "9px", color: "#64748B", margin: 0, textTransform: "uppercase", fontWeight: "600" }}>Localização</p>
-          <p style={{ fontSize: "11px", fontWeight: "600", color: "#1E293B", margin: "4px 0 0 0" }}>{application.city}, {application.state}</p>
+        <div style={{ padding: "6px", backgroundColor: "#F8FAFC", borderRadius: "4px", textAlign: "center" }}>
+          <p style={{ fontSize: "8px", color: "#64748B", margin: 0, textTransform: "uppercase", fontWeight: "600" }}>Localização</p>
+          <p style={{ fontSize: "10px", fontWeight: "600", color: "#1E293B", margin: "2px 0 0 0" }}>{application.city}, {application.state}</p>
         </div>
-        <div style={{ padding: "10px", backgroundColor: "#F8FAFC", borderRadius: "6px", textAlign: "center" }}>
-          <p style={{ fontSize: "9px", color: "#64748B", margin: 0, textTransform: "uppercase", fontWeight: "600" }}>Escolaridade</p>
-          <p style={{ fontSize: "11px", fontWeight: "600", color: "#1E293B", margin: "4px 0 0 0" }}>{application.education_level}</p>
+        <div style={{ padding: "6px", backgroundColor: "#F8FAFC", borderRadius: "4px", textAlign: "center" }}>
+          <p style={{ fontSize: "8px", color: "#64748B", margin: 0, textTransform: "uppercase", fontWeight: "600" }}>Escolaridade</p>
+          <p style={{ fontSize: "10px", fontWeight: "600", color: "#1E293B", margin: "2px 0 0 0" }}>{application.education_level}</p>
         </div>
         {application.salary_expectation && (
-          <div style={{ padding: "10px", backgroundColor: "#F8FAFC", borderRadius: "6px", textAlign: "center" }}>
-            <p style={{ fontSize: "9px", color: "#64748B", margin: 0, textTransform: "uppercase", fontWeight: "600" }}>Pretensão</p>
-            <p style={{ fontSize: "11px", fontWeight: "600", color: "#1E293B", margin: "4px 0 0 0" }}>{application.salary_expectation}</p>
+          <div style={{ padding: "6px", backgroundColor: "#F8FAFC", borderRadius: "4px", textAlign: "center" }}>
+            <p style={{ fontSize: "8px", color: "#64748B", margin: 0, textTransform: "uppercase", fontWeight: "600" }}>Pretensão</p>
+            <p style={{ fontSize: "10px", fontWeight: "600", color: "#1E293B", margin: "2px 0 0 0" }}>{application.salary_expectation}</p>
           </div>
         )}
         {application.availability && (
-          <div style={{ padding: "10px", backgroundColor: "#F8FAFC", borderRadius: "6px", textAlign: "center" }}>
-            <p style={{ fontSize: "9px", color: "#64748B", margin: 0, textTransform: "uppercase", fontWeight: "600" }}>Disponibilidade</p>
-            <p style={{ fontSize: "11px", fontWeight: "600", color: "#1E293B", margin: "4px 0 0 0" }}>{application.availability}</p>
+          <div style={{ padding: "6px", backgroundColor: "#F8FAFC", borderRadius: "4px", textAlign: "center" }}>
+            <p style={{ fontSize: "8px", color: "#64748B", margin: 0, textTransform: "uppercase", fontWeight: "600" }}>Disponibilidade</p>
+            <p style={{ fontSize: "10px", fontWeight: "600", color: "#1E293B", margin: "2px 0 0 0" }}>{application.availability}</p>
           </div>
         )}
       </div>
 
       {/* Experience */}
-      <div style={{ marginBottom: "14px" }}>
-        <p style={{ fontSize: "10px", color: "#64748B", margin: "0 0 4px 0", fontWeight: "600", textTransform: "uppercase" }}>Experiência</p>
-        <p style={{ fontSize: "11px", color: "#374151", margin: 0, lineHeight: "1.5", maxHeight: "36px", overflow: "hidden" }}>
-          {application.experience.length > 200 ? application.experience.substring(0, 200) + "..." : application.experience}
+      <div style={{ marginBottom: "10px" }}>
+        <p style={{ fontSize: "9px", color: "#64748B", margin: "0 0 3px 0", fontWeight: "600", textTransform: "uppercase" }}>Experiência</p>
+        <p style={{ fontSize: "10px", color: "#374151", margin: 0, lineHeight: "1.4" }}>
+          {application.experience.length > 180 ? application.experience.substring(0, 180) + "..." : application.experience}
         </p>
       </div>
 
       {/* Scored Questions Analysis */}
       {answerAnalysis.length > 0 && (
         <div>
-          <p style={{ fontSize: "10px", color: "#1E3A8A", margin: "0 0 8px 0", fontWeight: "700", textTransform: "uppercase" }}>
+          <p style={{ fontSize: "9px", color: "#1E3A8A", margin: "0 0 6px 0", fontWeight: "700", textTransform: "uppercase" }}>
             📊 Avaliação das Respostas
           </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "10px" }}>
-            {answerAnalysis.slice(0, 4).map((item, index) => {
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginBottom: "8px" }}>
+            {answerAnalysis.slice(0, 6).map((item, index) => {
               const color = getScoreColor(item.score);
               return (
                 <div
                   key={index}
                   style={{
-                    padding: "6px 10px",
+                    padding: "4px 8px",
                     backgroundColor: color.bg,
-                    borderRadius: "6px",
+                    borderRadius: "4px",
                     display: "flex",
                     alignItems: "center",
-                    gap: "6px",
+                    gap: "4px",
                   }}
                 >
-                  <span style={{ fontSize: "10px", color: color.text, fontWeight: "600" }}>
+                  <span style={{ fontSize: "9px", color: color.text, fontWeight: "600" }}>
                     {item.label} ({item.score}/4)
                   </span>
                 </div>
@@ -286,12 +285,12 @@ const CandidateCard = ({ application, job }: { application: Application; job?: J
           <div
             style={{
               display: "inline-block",
-              padding: "8px 16px",
+              padding: "6px 12px",
               background: "linear-gradient(135deg, #1E3A8A, #2563EB)",
-              borderRadius: "8px",
+              borderRadius: "6px",
             }}
           >
-            <span style={{ fontSize: "12px", color: "#FFFFFF", fontWeight: "700" }}>
+            <span style={{ fontSize: "10px", color: "#FFFFFF", fontWeight: "700" }}>
               📈 Pontuação: {totalScore}/{maxTotalScore} ({scorePercentage}%)
             </span>
           </div>
@@ -302,9 +301,9 @@ const CandidateCard = ({ application, job }: { application: Application; job?: J
       <p
         style={{
           position: "absolute",
-          bottom: "12px",
-          right: "32px",
-          fontSize: "10px",
+          bottom: "8px",
+          right: "28px",
+          fontSize: "9px",
           color: "#9CA3AF",
           margin: 0,
         }}
@@ -353,55 +352,59 @@ export const CandidatoPDFCompacto = forwardRef<HTMLDivElement, CandidatoPDFCompa
             {/* Page Header */}
             <div
               style={{
-                padding: "16px 32px",
+                padding: "12px 28px",
                 borderBottom: "2px solid #E5E7EB",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
                 backgroundColor: "#F8FAFC",
+                height: "45px",
+                boxSizing: "border-box",
               }}
             >
               <div>
-                <span style={{ fontSize: "14px", fontWeight: "700", color: "#1E3A8A" }}>
+                <span style={{ fontSize: "13px", fontWeight: "700", color: "#1E3A8A" }}>
                   RecrutaMente
                 </span>
-                <span style={{ fontSize: "11px", color: "#6B7280", marginLeft: "12px" }}>
+                <span style={{ fontSize: "10px", color: "#6B7280", marginLeft: "10px" }}>
                   Relatório de Candidatos
                 </span>
               </div>
               <div style={{ textAlign: "right" }}>
-                <span style={{ fontSize: "11px", color: "#6B7280" }}>
+                <span style={{ fontSize: "10px", color: "#6B7280" }}>
                   Página {pageIndex + 1} de {pages.length} • {currentDate}
                 </span>
               </div>
             </div>
 
-            {/* Candidates */}
-            {pageApps.map((app, index) => (
-              <CandidateCard
-                key={app.id}
-                application={app}
-                job={getJobForApplication(app)}
-              />
-            ))}
+            {/* Candidates Container */}
+            <div style={{ height: "1032px" }}> {/* 1123 - 45 header - 36 footer - 10 margin = ~1032 */}
+              {pageApps.map((app) => (
+                <CandidateCard
+                  key={app.id}
+                  application={app}
+                  job={getJobForApplication(app)}
+                />
+              ))}
 
-            {/* If only 1 candidate on page, add empty space */}
-            {pageApps.length === 1 && (
-              <div style={{ height: "540px", backgroundColor: "#FAFAFA" }}>
-                <div
-                  style={{
-                    height: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#D1D5DB",
-                    fontSize: "14px",
-                  }}
-                >
-                  — Fim do relatório —
+              {/* If only 1 candidate on page, add empty space */}
+              {pageApps.length === 1 && (
+                <div style={{ height: "516px", backgroundColor: "#FAFAFA" }}>
+                  <div
+                    style={{
+                      height: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#D1D5DB",
+                      fontSize: "12px",
+                    }}
+                  >
+                    — Fim do relatório —
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Page Footer */}
             <div
@@ -410,13 +413,15 @@ export const CandidatoPDFCompacto = forwardRef<HTMLDivElement, CandidatoPDFCompa
                 bottom: 0,
                 left: 0,
                 right: 0,
-                padding: "10px 32px",
+                padding: "8px 28px",
                 backgroundColor: "#F8FAFC",
                 borderTop: "1px solid #E5E7EB",
                 textAlign: "center",
+                height: "36px",
+                boxSizing: "border-box",
               }}
             >
-              <span style={{ fontSize: "10px", color: "#9CA3AF" }}>
+              <span style={{ fontSize: "9px", color: "#9CA3AF" }}>
                 Documento Confidencial • Uso Exclusivo para Processo Seletivo • www.recrutamente.com.br
               </span>
             </div>
