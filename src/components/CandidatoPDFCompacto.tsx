@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 import { ScoredQuestion, scoreLabels } from "@/types/customQuestions";
+import logoRecrutamente from "@/assets/logo-recrutamente.png";
 
 interface CustomQuestionsData {
   predefinedQuestions?: string[];
@@ -322,11 +323,6 @@ export const CandidatoPDFCompacto = forwardRef<HTMLDivElement, CandidatoPDFCompa
       pages.push(applications.slice(i, i + 2));
     }
 
-    const currentDate = new Date().toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
 
     return (
       <div
@@ -362,17 +358,15 @@ export const CandidatoPDFCompacto = forwardRef<HTMLDivElement, CandidatoPDFCompa
                 boxSizing: "border-box",
               }}
             >
-              <div>
-                <span style={{ fontSize: "13px", fontWeight: "700", color: "#1E3A8A" }}>
-                  RecrutaMente
-                </span>
-                <span style={{ fontSize: "10px", color: "#6B7280", marginLeft: "10px" }}>
-                  Relatório de Candidatos
-                </span>
-              </div>
+              <img
+                src={logoRecrutamente}
+                alt="RecrutaMente"
+                style={{ height: "28px", objectFit: "contain" }}
+                crossOrigin="anonymous"
+              />
               <div style={{ textAlign: "right" }}>
                 <span style={{ fontSize: "10px", color: "#6B7280" }}>
-                  Página {pageIndex + 1} de {pages.length} • {currentDate}
+                  Página {pageIndex + 1} de {pages.length}
                 </span>
               </div>
             </div>
