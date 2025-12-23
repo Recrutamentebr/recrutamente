@@ -40,11 +40,12 @@ export const FounderSection = () => {
               </div>
             </div>
 
-            <p className="text-foreground leading-relaxed">Bacharel em Direito, com mais de 15 anos de experiência profissional nas áreas de jurídico consultivo, gestão de carteira de clientes, consultoria em gestão financeira estratégica, valuation, M&A (Fusões e Aquisições) e gestão de pessoas.<span className="font-semibold text-accent">15 anos de experiência profissional</span> nas áreas de jurídico consultivo, gestão de carteira de clientes, consultoria em gestão financeira estratégica, valuation, M&A (Fusões e Aquisições) e gestão de pessoas.
+            <p className="text-foreground leading-relaxed">
+              Bacharel em Direito, com mais de <span className="font-semibold text-accent">15 anos de experiência profissional</span> nas áreas de jurídico consultivo, gestão de carteira de clientes, consultoria em gestão financeira estratégica, valuation, M&A (Fusões e Aquisições) e gestão de pessoas.
             </p>
 
             <p className="text-foreground leading-relaxed">
-              Profissional orientado a resultados, com atuação em empresas de grande porte e relevância nacional e internacional, como <span className="font-semibold">Bacharel em Direito, com mais de 15 anos de experiência profissional nas áreas de jurídico consultivo, gestão de carteira de clientes, consultoria em gestão financeira estratégica, valuation, M&A (Fusões e Aquisições) e gestão de pessoas.15 anos de experiência profissional nas áreas de jurídico consultivo, gestão de carteira de clientes, consultoria em gestão financeira estratégica, valuation, M&A (Fusões e Aquisições) e gestão de pessoas.</span>, liderando projetos, estruturando equipes e desenvolvendo soluções estratégicas voltadas ao crescimento sustentável.
+              Profissional orientado a resultados, com atuação em empresas de grande porte e relevância nacional e internacional, liderando projetos, estruturando equipes e desenvolvendo soluções estratégicas voltadas ao crescimento sustentável.
             </p>
 
             <p className="text-foreground leading-relaxed">
