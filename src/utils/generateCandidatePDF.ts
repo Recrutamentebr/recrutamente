@@ -390,55 +390,15 @@ export const generateBulkPDF = async (
     const pdf = new jsPDF("p", "mm", "a4");
     const totalPages = Math.ceil(imgHeight / usableHeight);
 
-    // Load logo image as base64
-    const loadLogoAsBase64 = (): Promise<string> => {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0);
-            resolve(canvas.toDataURL('image/png'));
-          } else {
-            reject(new Error('Could not get canvas context'));
-          }
-        };
-        img.onerror = reject;
-        img.src = logoRecrutamente;
-      });
-    };
-
-    let logoBase64: string | null = null;
-    try {
-      logoBase64 = await loadLogoAsBase64();
-    } catch (e) {
-      console.warn('Could not load logo:', e);
-    }
-
-    // Function to add header with logo
+    // Function to add header with page number only
     const addPageHeader = (pageNum: number) => {
       pdf.setFillColor(30, 58, 138);
       pdf.rect(0, 0, imgWidth, 3, 'F');
       
-      // Add logo image
-      if (logoBase64) {
-        pdf.addImage(logoBase64, 'PNG', 10, 5, 30, 10);
-      } else {
-        // Fallback to text
-        pdf.setFontSize(12);
-        pdf.setTextColor(30, 58, 138);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('RecrutaMente', 10, 12);
-      }
-      
       pdf.setFontSize(9);
       pdf.setTextColor(107, 114, 128);
       pdf.setFont('helvetica', 'normal');
-      pdf.text(`Relatório de Candidatos • Página ${pageNum} de ${totalPages}`, imgWidth - 10, 12, { align: 'right' });
+      pdf.text(`Página ${pageNum} de ${totalPages}`, imgWidth - 10, 12, { align: 'right' });
       
       pdf.setDrawColor(229, 231, 235);
       pdf.setLineWidth(0.3);
