@@ -12,7 +12,7 @@ const navLinks = [
   { href: "/empresas", label: "Para Empresas" },
   { href: "/#contato", label: "Contato" },
   { href: "/auth", label: "Painel Admin" },
-  { href: "/cliente-login", label: "Painel Cliente" },
+  { href: "/cliente/login", label: "Painel Cliente" },
 ];
 
 export function Header() {
