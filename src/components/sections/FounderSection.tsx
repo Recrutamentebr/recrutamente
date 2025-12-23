@@ -36,7 +36,7 @@ export const FounderSection = () => {
               </div>
               <div>
                 <h3 className="text-xl font-bold text-foreground">Denys Lira</h3>
-                <p className="text-muted-foreground text-sm">Bacharel em Direito</p>
+                <p className="text-muted-foreground text-sm">Fundador</p>
               </div>
             </div>
 
