@@ -1,18 +1,20 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ChevronLeft, Loader2, ExternalLink } from "lucide-react";
+import { ChevronLeft, Loader2, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { customQuestionsSections } from "@/data/customQuestions";
 
 const areas = [
   "Tecnologia",
@@ -38,22 +40,6 @@ const states = [
   "RS", "RO", "RR", "SC", "SP", "SE", "TO"
 ];
 
-interface JobData {
-  id: string;
-  title: string;
-  description: string;
-  requirements: string | null;
-  responsibilities: string | null;
-  benefits: string | null;
-  area: string;
-  city: string;
-  state: string;
-  type: string;
-  level: string;
-  salary_range: string | null;
-  is_active: boolean;
-}
-
 const EditarVagaPage = () => {
   const { id } = useParams();
   const { company, user } = useAuth();
@@ -62,6 +48,9 @@ const EditarVagaPage = () => {
   
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
+  const [expandedSections, setExpandedSections] = useState<string[]>([]);
+  const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -120,6 +109,12 @@ const EditarVagaPage = () => {
         form_type: data.external_form_url ? "external" : "internal",
         external_form_url: data.external_form_url || "",
       });
+
+      // Load custom questions
+      const customQuestions = data.custom_questions as string[] | null;
+      if (customQuestions && Array.isArray(customQuestions)) {
+        setSelectedQuestions(customQuestions);
+      }
     } catch (error) {
       console.error("Error fetching job:", error);
       toast({
@@ -135,6 +130,36 @@ const EditarVagaPage = () => {
 
   const handleChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections((prev) =>
+      prev.includes(sectionId)
+        ? prev.filter((id) => id !== sectionId)
+        : [...prev, sectionId]
+    );
+  };
+
+  const toggleQuestion = (questionId: string) => {
+    setSelectedQuestions((prev) =>
+      prev.includes(questionId)
+        ? prev.filter((id) => id !== questionId)
+        : [...prev, questionId]
+    );
+  };
+
+  const toggleAllInSection = (sectionId: string) => {
+    const section = customQuestionsSections.find((s) => s.id === sectionId);
+    if (!section) return;
+
+    const sectionQuestionIds = section.questions.map((q) => q.id);
+    const allSelected = sectionQuestionIds.every((id) => selectedQuestions.includes(id));
+
+    if (allSelected) {
+      setSelectedQuestions((prev) => prev.filter((id) => !sectionQuestionIds.includes(id)));
+    } else {
+      setSelectedQuestions((prev) => [...new Set([...prev, ...sectionQuestionIds])]);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -169,6 +194,7 @@ const EditarVagaPage = () => {
           salary_range: formData.salary_range || null,
           is_active: formData.is_active,
           external_form_url: formData.form_type === "external" ? formData.external_form_url : null,
+          custom_questions: selectedQuestions,
         })
         .eq("id", id);
 
@@ -467,6 +493,94 @@ const EditarVagaPage = () => {
                       </div>
                     )}
                   </div>
+
+                  {/* Custom Questions */}
+                  {formData.form_type === "internal" && (
+                    <div>
+                      <h2 className="font-bold text-xl text-foreground mb-4 pb-4 border-b border-border">
+                        Perguntas Personalizadas
+                      </h2>
+                      <p className="text-sm text-muted-foreground mb-6">
+                        Selecione as perguntas adicionais que deseja incluir no formulário de candidatura. 
+                        As perguntas fixas (nome, e-mail, telefone, experiência, etc.) sempre aparecerão.
+                      </p>
+
+                      {selectedQuestions.length > 0 && (
+                        <div className="mb-6 p-4 bg-accent/10 rounded-xl">
+                          <p className="text-sm font-medium text-foreground">
+                            {selectedQuestions.length} pergunta{selectedQuestions.length !== 1 ? "s" : ""} selecionada{selectedQuestions.length !== 1 ? "s" : ""}
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="space-y-3">
+                        {customQuestionsSections.map((section) => {
+                          const isExpanded = expandedSections.includes(section.id);
+                          const sectionQuestionIds = section.questions.map((q) => q.id);
+                          const selectedInSection = sectionQuestionIds.filter((id) =>
+                            selectedQuestions.includes(id)
+                          ).length;
+
+                          return (
+                            <div key={section.id} className="border border-border rounded-xl overflow-hidden">
+                              <button
+                                type="button"
+                                onClick={() => toggleSection(section.id)}
+                                className="w-full flex items-center justify-between p-4 bg-secondary/50 hover:bg-secondary transition-colors"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <span className="font-medium text-foreground">{section.title}</span>
+                                  {selectedInSection > 0 && (
+                                    <span className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded-full">
+                                      {selectedInSection}/{section.questions.length}
+                                    </span>
+                                  )}
+                                </div>
+                                {isExpanded ? (
+                                  <ChevronUp size={18} className="text-muted-foreground" />
+                                ) : (
+                                  <ChevronDown size={18} className="text-muted-foreground" />
+                                )}
+                              </button>
+
+                              {isExpanded && (
+                                <div className="p-4 space-y-3 bg-background">
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleAllInSection(section.id)}
+                                    className="text-sm text-accent hover:underline"
+                                  >
+                                    {sectionQuestionIds.every((id) => selectedQuestions.includes(id))
+                                      ? "Desmarcar todas"
+                                      : "Selecionar todas"}
+                                  </button>
+
+                                  {section.questions.map((question) => (
+                                    <div
+                                      key={question.id}
+                                      className="flex items-start gap-3 p-3 rounded-lg hover:bg-secondary/30 transition-colors"
+                                    >
+                                      <Checkbox
+                                        id={`edit-${question.id}`}
+                                        checked={selectedQuestions.includes(question.id)}
+                                        onCheckedChange={() => toggleQuestion(question.id)}
+                                      />
+                                      <label
+                                        htmlFor={`edit-${question.id}`}
+                                        className="text-sm text-foreground cursor-pointer flex-1"
+                                      >
+                                        {question.label}
+                                      </label>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Submit */}
                   <div className="pt-6 border-t border-border flex gap-4">
