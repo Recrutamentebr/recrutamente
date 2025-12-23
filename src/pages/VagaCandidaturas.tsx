@@ -10,6 +10,7 @@ import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getQuestionLabel } from "@/data/customQuestions";
 
 interface Application {
   id: string;
@@ -22,12 +23,14 @@ interface Application {
   experience: string;
   salary_expectation: string | null;
   availability: string | null;
+  expectations: string | null;
   linkedin_url: string | null;
   portfolio_url: string | null;
   additional_info: string | null;
   resume_url: string | null;
   status: string;
   created_at: string;
+  custom_answers: Record<string, string> | null;
 }
 
 interface Job {
@@ -101,7 +104,13 @@ const VagaCandidaturasPage = () => {
         .order("created_at", { ascending: false });
 
       if (appError) throw appError;
-      setApplications(appData || []);
+      
+      const appsWithCustomAnswers = (appData || []).map(app => ({
+        ...app,
+        custom_answers: app.custom_answers as Record<string, string> | null
+      }));
+      
+      setApplications(appsWithCustomAnswers);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast({
@@ -330,12 +339,38 @@ const VagaCandidaturasPage = () => {
                         </p>
                       </div>
 
+                      {selectedApplication.expectations && (
+                        <div className="mb-6">
+                          <label className="text-sm text-muted-foreground">Expectativas para o Cargo</label>
+                          <p className="text-foreground whitespace-pre-wrap mt-1">
+                            {selectedApplication.expectations}
+                          </p>
+                        </div>
+                      )}
+
                       {selectedApplication.additional_info && (
                         <div className="mb-6">
                           <label className="text-sm text-muted-foreground">Informações Adicionais</label>
                           <p className="text-foreground whitespace-pre-wrap mt-1">
                             {selectedApplication.additional_info}
                           </p>
+                        </div>
+                      )}
+
+                      {/* Custom Answers */}
+                      {selectedApplication.custom_answers && Object.keys(selectedApplication.custom_answers).length > 0 && (
+                        <div className="mb-6 p-4 bg-secondary/50 rounded-xl">
+                          <h3 className="font-medium text-foreground mb-4">Respostas Personalizadas</h3>
+                          <div className="grid sm:grid-cols-2 gap-4">
+                            {Object.entries(selectedApplication.custom_answers).map(([questionId, answer]) => (
+                              <div key={questionId}>
+                                <label className="text-sm text-muted-foreground">
+                                  {getQuestionLabel(questionId)}
+                                </label>
+                                <p className="text-foreground">{answer}</p>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
 

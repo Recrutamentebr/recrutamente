@@ -10,12 +10,14 @@ import { Footer } from "@/components/Footer";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { customQuestionsSections, getQuestionById } from "@/data/customQuestions";
 
 interface Job {
   id: string;
   title: string;
   city: string;
   state: string;
+  custom_questions: string[] | null;
 }
 
 const escolaridade = [
@@ -47,6 +49,7 @@ const CandidaturaPage = () => {
   const [fileName, setFileName] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string>("");
+  const [customAnswers, setCustomAnswers] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchJobs();
@@ -55,15 +58,27 @@ const CandidaturaPage = () => {
   const fetchJobs = async () => {
     const { data } = await supabase
       .from("jobs")
-      .select("id, title, city, state")
+      .select("id, title, city, state, custom_questions")
       .eq("is_active", true);
     
-    setJobs(data || []);
+    const jobsData = (data || []).map(j => ({
+      ...j,
+      custom_questions: j.custom_questions as string[] | null
+    }));
+    
+    setJobs(jobsData);
     if (id && data) {
-      const found = data.find((j) => j.id === id);
+      const found = jobsData.find((j) => j.id === id);
       setJob(found || null);
       if (found) setSelectedJobId(found.id);
     }
+  };
+
+  const handleJobChange = (jobId: string) => {
+    setSelectedJobId(jobId);
+    const selected = jobs.find((j) => j.id === jobId);
+    setJob(selected || null);
+    setCustomAnswers({}); // Reset custom answers when job changes
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,6 +95,10 @@ const CandidaturaPage = () => {
       setFile(selectedFile);
       setFileName(selectedFile.name);
     }
+  };
+
+  const handleCustomAnswerChange = (questionId: string, value: string) => {
+    setCustomAnswers((prev) => ({ ...prev, [questionId]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -126,6 +145,7 @@ const CandidaturaPage = () => {
         expectations: formData.get("expectativas") as string,
         additional_info: formData.get("observacoes") as string || null,
         resume_url: resumeUrl,
+        custom_answers: Object.keys(customAnswers).length > 0 ? customAnswers : null,
       } as any);
 
       if (error) throw error;
@@ -146,6 +166,30 @@ const CandidaturaPage = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Get custom questions for selected job
+  const getJobCustomQuestions = () => {
+    if (!job?.custom_questions || !Array.isArray(job.custom_questions)) return [];
+    
+    const questions: { id: string; label: string; options: string[]; sectionTitle: string }[] = [];
+    
+    for (const section of customQuestionsSections) {
+      for (const question of section.questions) {
+        if (job.custom_questions.includes(question.id)) {
+          questions.push({
+            id: question.id,
+            label: question.label,
+            options: question.options,
+            sectionTitle: section.title,
+          });
+        }
+      }
+    }
+    
+    return questions;
+  };
+
+  const customQuestions = getJobCustomQuestions();
 
   if (isSubmitted) {
     return (
@@ -282,7 +326,7 @@ const CandidaturaPage = () => {
                         <label className="text-sm font-medium text-foreground">
                           Vaga de Interesse *
                         </label>
-                        <Select value={selectedJobId} onValueChange={setSelectedJobId} required>
+                        <Select value={selectedJobId} onValueChange={handleJobChange} required>
                           <SelectTrigger className="bg-background h-12">
                             <SelectValue placeholder="Selecione uma vaga" />
                           </SelectTrigger>
@@ -354,7 +398,41 @@ const CandidaturaPage = () => {
                     </div>
                   </div>
 
-                  {/* Additional Questions */}
+                  {/* Custom Questions - Dynamic based on job */}
+                  {customQuestions.length > 0 && (
+                    <div>
+                      <h2 className="font-bold text-xl text-foreground mb-6 pb-4 border-b border-border">
+                        Perguntas Adicionais
+                      </h2>
+                      <div className="space-y-6">
+                        {customQuestions.map((question) => (
+                          <div key={question.id} className="space-y-2">
+                            <label className="text-sm font-medium text-foreground">
+                              {question.label} *
+                            </label>
+                            <Select 
+                              value={customAnswers[question.id] || ""} 
+                              onValueChange={(v) => handleCustomAnswerChange(question.id, v)}
+                              required
+                            >
+                              <SelectTrigger className="bg-background h-12">
+                                <SelectValue placeholder="Selecione" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {question.options.map((option) => (
+                                  <SelectItem key={option} value={option}>
+                                    {option}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Additional Questions - Fixed */}
                   <div>
                     <h2 className="font-bold text-xl text-foreground mb-6 pb-4 border-b border-border">
                       Informações Adicionais

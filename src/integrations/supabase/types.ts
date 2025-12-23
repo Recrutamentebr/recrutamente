@@ -20,6 +20,7 @@ export type Database = {
           availability: string | null
           city: string
           created_at: string
+          custom_answers: Json | null
           education_level: string
           email: string
           expectations: string | null
@@ -41,6 +42,7 @@ export type Database = {
           availability?: string | null
           city: string
           created_at?: string
+          custom_answers?: Json | null
           education_level: string
           email: string
           expectations?: string | null
@@ -62,6 +64,7 @@ export type Database = {
           availability?: string | null
           city?: string
           created_at?: string
+          custom_answers?: Json | null
           education_level?: string
           email?: string
           expectations?: string | null
@@ -207,6 +210,7 @@ export type Database = {
           city: string
           company_id: string
           created_at: string
+          custom_questions: Json | null
           description: string
           external_form_url: string | null
           id: string
@@ -226,6 +230,7 @@ export type Database = {
           city: string
           company_id: string
           created_at?: string
+          custom_questions?: Json | null
           description: string
           external_form_url?: string | null
           id?: string
@@ -245,6 +250,7 @@ export type Database = {
           city?: string
           company_id?: string
           created_at?: string
+          custom_questions?: Json | null
           description?: string
           external_form_url?: string | null
           id?: string
