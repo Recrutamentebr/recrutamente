@@ -43,6 +43,23 @@ const scoreMapping: Record<string, number> = {
   "Baixo": 25, "Médio": 50, "Alto": 75, "Muito alto": 100,
   "Básico (fórmulas simples)": 25, "Intermediário (PROCV/XLOOKUP, tabelas dinâmicas)": 50,
   "Avançado (Power BI, VBA, Power Query)": 100,
+  // Cultura
+  "Trabalho individual com autonomia": 75, "Trabalho em equipe com colaboração constante": 75,
+  "Misto - autonomia com pontos de colaboração": 100, "Liderança de projetos/equipes": 100,
+  "Ambiente estruturado com processos definidos": 75, "Ambiente dinâmico com mudanças frequentes": 75,
+  "Startup/ambiente inovador com riscos": 75, "Ambiente tradicional e estável": 75,
+  "Crescimento de carreira e promoções": 75, "Remuneração e benefícios": 75,
+  "Aprendizado e novos desafios": 100, "Propósito e impacto social": 100, "Equilíbrio vida pessoal/profissional": 75,
+  "Muito bem - me motiva a produzir mais": 100, "Bem - consigo me organizar e entregar": 75,
+  "Razoavelmente - preciso de suporte": 50, "Com dificuldade - prefiro prazos confortáveis": 25,
+  "Direto e objetivo, mesmo se for crítico": 100, "Construtivo e com sugestões de melhoria": 100,
+  "Em conversas periódicas (1:1)": 75, "Por escrito para refletir depois": 75,
+  "Diálogo direto com a pessoa envolvida": 100, "Mediação com gestor ou RH": 75,
+  "Evito conflitos e busco consenso": 50, "Análise racional focada na solução": 100,
+  "Me adapto rapidamente sem problemas": 100, "Preciso de um tempo para ajustar": 75,
+  "Prefiro mudanças planejadas": 50, "Tenho dificuldade com mudanças": 25,
+  "Reporta imediatamente à liderança": 100, "Busca orientação antes de agir": 100,
+  "Tenta resolver discretamente": 50, "Avalia as consequências antes de decidir": 75,
 };
 
 const categoryQuestions: Record<string, string[]> = {
@@ -52,6 +69,7 @@ const categoryQuestions: Record<string, string[]> = {
   "Comportamental": ["trabalho_equipe", "lideranca_influencia", "organizacao_tempo", "comunicacao"],
   "Financeiro": ["financas_corporativas", "contabilidade", "orcamento_fluxo"],
   "Idiomas": ["ingles", "outros_idiomas"],
+  "Cultura": ["estilo_trabalho", "ambiente_preferido", "motivacao_principal", "pressao_prazos", "feedback_preferencia", "conflitos", "mudancas", "etica_dilema"],
 };
 
 const getScore = (answer: string): number => {

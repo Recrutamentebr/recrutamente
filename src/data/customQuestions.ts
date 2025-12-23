@@ -344,6 +344,101 @@ export const customQuestionsSections: CustomQuestionSection[] = [
         options: ["Baixo", "Médio", "Alto", "Muito alto"]
       }
     ]
+  },
+  {
+    id: "cultura_valores",
+    title: "🔹 13. Cultura e Valores",
+    questions: [
+      {
+        id: "estilo_trabalho",
+        label: "Qual seu estilo de trabalho preferido?",
+        type: "select",
+        options: [
+          "Trabalho individual com autonomia",
+          "Trabalho em equipe com colaboração constante",
+          "Misto - autonomia com pontos de colaboração",
+          "Liderança de projetos/equipes"
+        ]
+      },
+      {
+        id: "ambiente_preferido",
+        label: "Que tipo de ambiente de trabalho você prefere?",
+        type: "select",
+        options: [
+          "Ambiente estruturado com processos definidos",
+          "Ambiente dinâmico com mudanças frequentes",
+          "Startup/ambiente inovador com riscos",
+          "Ambiente tradicional e estável"
+        ]
+      },
+      {
+        id: "motivacao_principal",
+        label: "O que mais te motiva no trabalho?",
+        type: "select",
+        options: [
+          "Crescimento de carreira e promoções",
+          "Remuneração e benefícios",
+          "Aprendizado e novos desafios",
+          "Propósito e impacto social",
+          "Equilíbrio vida pessoal/profissional"
+        ]
+      },
+      {
+        id: "pressao_prazos",
+        label: "Como você lida com pressão e prazos apertados?",
+        type: "select",
+        options: [
+          "Muito bem - me motiva a produzir mais",
+          "Bem - consigo me organizar e entregar",
+          "Razoavelmente - preciso de suporte",
+          "Com dificuldade - prefiro prazos confortáveis"
+        ]
+      },
+      {
+        id: "feedback_preferencia",
+        label: "Como você prefere receber feedback?",
+        type: "select",
+        options: [
+          "Direto e objetivo, mesmo se for crítico",
+          "Construtivo e com sugestões de melhoria",
+          "Em conversas periódicas (1:1)",
+          "Por escrito para refletir depois"
+        ]
+      },
+      {
+        id: "conflitos",
+        label: "Como você geralmente resolve conflitos no trabalho?",
+        type: "select",
+        options: [
+          "Diálogo direto com a pessoa envolvida",
+          "Mediação com gestor ou RH",
+          "Evito conflitos e busco consenso",
+          "Análise racional focada na solução"
+        ]
+      },
+      {
+        id: "mudancas",
+        label: "Como você reage a mudanças inesperadas?",
+        type: "select",
+        options: [
+          "Me adapto rapidamente sem problemas",
+          "Preciso de um tempo para ajustar",
+          "Prefiro mudanças planejadas",
+          "Tenho dificuldade com mudanças"
+        ]
+      },
+      {
+        id: "etica_dilema",
+        label: "Diante de um dilema ético no trabalho, você:",
+        type: "select",
+        options: [
+          "Reporta imediatamente à liderança",
+          "Busca orientação antes de agir",
+          "Tenta resolver discretamente",
+          "Avalia as consequências antes de decidir"
+        ]
+      }
+    ]
   }
 ];
 
