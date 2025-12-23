@@ -219,6 +219,7 @@ export type Database = {
           requirements: string | null
           responsibilities: string | null
           salary_range: string | null
+          slug: string
           state: string
           title: string
           type: string
@@ -239,6 +240,7 @@ export type Database = {
           requirements?: string | null
           responsibilities?: string | null
           salary_range?: string | null
+          slug: string
           state: string
           title: string
           type?: string
@@ -259,6 +261,7 @@ export type Database = {
           requirements?: string | null
           responsibilities?: string | null
           salary_range?: string | null
+          slug?: string
           state?: string
           title?: string
           type?: string

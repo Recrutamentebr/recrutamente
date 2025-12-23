@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { customQuestionsSections } from "@/data/customQuestions";
 import { CustomQuestionBuilder } from "@/components/CustomQuestionBuilder";
 import { ScoredQuestion } from "@/types/customQuestions";
+import { generateUniqueSlug } from "@/utils/slugify";
 
 const areas = [
   "Tecnologia",
@@ -126,9 +127,13 @@ const NovaVagaPage = () => {
     setIsLoading(true);
 
     try {
+      // Generate unique slug
+      const slug = await generateUniqueSlug(formData.title, company.id);
+      
       const { error } = await supabase.from("jobs").insert({
         company_id: company.id,
         title: formData.title,
+        slug: slug,
         description: formData.description,
         requirements: formData.requirements || null,
         responsibilities: formData.responsibilities || null,
@@ -144,7 +149,7 @@ const NovaVagaPage = () => {
           predefinedQuestions: selectedQuestions,
           scoredQuestions: scoredQuestions.filter(q => q.question && q.options.every(o => o.text)),
         } as any,
-      });
+      } as any);
 
       if (error) throw error;
 

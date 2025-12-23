@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { customQuestionsSections } from "@/data/customQuestions";
 import { CustomQuestionBuilder } from "@/components/CustomQuestionBuilder";
 import { ScoredQuestion } from "@/types/customQuestions";
+import { generateUniqueSlug } from "@/utils/slugify";
 
 const areas = [
   "Tecnologia",
@@ -50,6 +51,7 @@ const EditarVagaPage = () => {
   
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
+  const [originalTitle, setOriginalTitle] = useState("");
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
   const [scoredQuestions, setScoredQuestions] = useState<ScoredQuestion[]>([]);
@@ -96,6 +98,7 @@ const EditarVagaPage = () => {
         return;
       }
 
+      setOriginalTitle(data.title);
       setFormData({
         title: data.title,
         description: data.description,
@@ -193,27 +196,39 @@ const EditarVagaPage = () => {
     setIsLoading(true);
 
     try {
+      // Check if title changed and regenerate slug
+      let newSlug: string | undefined;
+      if (formData.title !== originalTitle && company) {
+        newSlug = await generateUniqueSlug(formData.title, company.id, id);
+      }
+
+      const updateData: any = {
+        title: formData.title,
+        description: formData.description,
+        requirements: formData.requirements || null,
+        responsibilities: formData.responsibilities || null,
+        benefits: formData.benefits || null,
+        area: formData.area,
+        city: formData.city,
+        state: formData.state,
+        type: formData.type,
+        level: formData.level,
+        salary_range: formData.salary_range || null,
+        is_active: formData.is_active,
+        external_form_url: formData.form_type === "external" ? formData.external_form_url : null,
+        custom_questions: {
+          predefinedQuestions: selectedQuestions,
+          scoredQuestions: scoredQuestions.filter(q => q.question && q.options.every(o => o.text)),
+        },
+      };
+
+      if (newSlug) {
+        updateData.slug = newSlug;
+      }
+
       const { error } = await supabase
         .from("jobs")
-        .update({
-          title: formData.title,
-          description: formData.description,
-          requirements: formData.requirements || null,
-          responsibilities: formData.responsibilities || null,
-          benefits: formData.benefits || null,
-          area: formData.area,
-          city: formData.city,
-          state: formData.state,
-          type: formData.type,
-          level: formData.level,
-          salary_range: formData.salary_range || null,
-          is_active: formData.is_active,
-          external_form_url: formData.form_type === "external" ? formData.external_form_url : null,
-          custom_questions: {
-            predefinedQuestions: selectedQuestions,
-            scoredQuestions: scoredQuestions.filter(q => q.question && q.options.every(o => o.text)),
-          } as any,
-        })
+        .update(updateData)
         .eq("id", id);
 
       if (error) throw error;
