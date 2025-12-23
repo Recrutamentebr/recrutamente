@@ -46,6 +46,7 @@ const CandidaturaPage = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submittedName, setSubmittedName] = useState("");
   const [fileName, setFileName] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string>("");
@@ -150,6 +151,7 @@ const CandidaturaPage = () => {
 
       if (error) throw error;
 
+      setSubmittedName(formData.get("nome") as string);
       setIsSubmitted(true);
       toast({
         title: "Candidatura enviada!",
@@ -200,10 +202,22 @@ const CandidaturaPage = () => {
             <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle className="text-accent" size={40} />
             </div>
-            <h1 className="text-2xl font-bold text-foreground mb-4">Candidatura Enviada!</h1>
-            <p className="text-muted-foreground mb-8">
-              Obrigado pelo interesse! Sua candidatura foi registrada em nosso banco de talentos. Nossa equipe analisará seu perfil e entrará em contato em breve.
-            </p>
+            <h1 className="text-2xl font-bold text-foreground mb-2">Inscrição Recebida</h1>
+            <p className="text-accent font-medium mb-6">Currículo em Análise</p>
+            <div className="text-left bg-secondary/50 rounded-xl p-6 mb-8">
+              <p className="text-foreground mb-4">
+                Olá <strong>{submittedName}</strong>!
+              </p>
+              <p className="text-muted-foreground mb-4">
+                Recebemos sua inscrição com sucesso na plataforma RecrutaMente.
+              </p>
+              <p className="text-muted-foreground mb-4">
+                Seu currículo foi encaminhado para análise e, caso esteja alinhado ao perfil da vaga, entraremos em contato para informar os próximos passos.
+              </p>
+              <p className="text-muted-foreground">
+                Agradecemos o seu interesse e desejamos boa sorte!
+              </p>
+            </div>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild>
                 <Link to="/vagas">Ver outras vagas</Link>
