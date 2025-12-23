@@ -15,6 +15,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { customQuestionsSections } from "@/data/customQuestions";
+import { CustomQuestionBuilder } from "@/components/CustomQuestionBuilder";
+import { ScoredQuestion } from "@/types/customQuestions";
 
 const areas = [
   "Tecnologia",
@@ -47,6 +49,7 @@ const NovaVagaPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
+  const [scoredQuestions, setScoredQuestions] = useState<ScoredQuestion[]>([]);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -137,7 +140,10 @@ const NovaVagaPage = () => {
         level: formData.level,
         salary_range: formData.salary_range || null,
         external_form_url: formData.form_type === "external" ? formData.external_form_url : null,
-        custom_questions: selectedQuestions,
+        custom_questions: {
+          predefinedQuestions: selectedQuestions,
+          scoredQuestions: scoredQuestions.filter(q => q.question && q.options.every(o => o.text)),
+        } as any,
       });
 
       if (error) throw error;
@@ -411,15 +417,27 @@ const NovaVagaPage = () => {
                     )}
                   </div>
 
-                  {/* Custom Questions */}
+                  {/* Custom Scored Questions */}
+                  {formData.form_type === "internal" && (
+                    <div>
+                      <h2 className="font-bold text-xl text-foreground mb-6 pb-4 border-b border-border">
+                        Perguntas Personalizadas da Vaga
+                      </h2>
+                      <CustomQuestionBuilder
+                        questions={scoredQuestions}
+                        onChange={setScoredQuestions}
+                      />
+                    </div>
+                  )}
+
+                  {/* Predefined Custom Questions */}
                   {formData.form_type === "internal" && (
                     <div>
                       <h2 className="font-bold text-xl text-foreground mb-4 pb-4 border-b border-border">
-                        Perguntas Personalizadas
+                        Perguntas do Banco de Perguntas
                       </h2>
                       <p className="text-sm text-muted-foreground mb-6">
-                        Selecione as perguntas adicionais que deseja incluir no formulário de candidatura. 
-                        As perguntas fixas (nome, e-mail, telefone, experiência, etc.) sempre aparecerão.
+                        Selecione perguntas adicionais do banco de perguntas pré-definidas.
                       </p>
 
                       {selectedQuestions.length > 0 && (
