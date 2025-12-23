@@ -551,7 +551,7 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
                         <DialogTitle>{app.full_name}</DialogTitle>
                       </DialogHeader>
                       <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
                             <p className="text-sm text-muted-foreground">E-mail</p>
                             <p className="font-medium">{app.email}</p>
