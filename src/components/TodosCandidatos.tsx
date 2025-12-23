@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Download, Loader2, Search, Users, Eye, Mail, Phone, FileText, Paperclip } from "lucide-react";
+import { Loader2, Search, Users, Eye, Mail, Phone, FileText, Paperclip, MoreVertical, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,6 +23,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
@@ -302,37 +309,197 @@ const TodosCandidatos = ({ companyId }: TodosCandidatosProps) => {
     });
 
     for (const app of applicationsWithResume) {
-      try {
-        const { data, error } = await supabase.storage
-          .from("resumes")
-          .download(app.resume_url!);
-
-        if (error) {
-          console.error(`Erro ao baixar currículo de ${app.full_name}:`, error);
-          continue;
-        }
-
-        // Get file extension from original path
-        const extension = app.resume_url!.split(".").pop() || "pdf";
-        const fileName = `curriculo_${app.full_name.replace(/\s+/g, "_")}.${extension}`;
-
-        // Download file
-        const url = URL.createObjectURL(data);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      } catch (error) {
-        console.error(`Erro ao processar currículo de ${app.full_name}:`, error);
-      }
+      await downloadSingleResume(app, false);
     }
 
     toast({
       title: "Currículos baixados!",
       description: `${applicationsWithResume.length} currículo(s) baixado(s).`,
+    });
+  };
+
+  // Download individual PDF
+  const downloadSinglePDF = (app: Application) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    const lineHeight = 7;
+    let y = margin;
+
+    // Header
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text(app.full_name, margin, y);
+    y += 10;
+
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100);
+    doc.text(`Vaga: ${app.job_title}`, margin, y);
+    y += lineHeight;
+    doc.text(`Status: ${statusLabels[app.status] || app.status}`, margin, y);
+    y += lineHeight * 2;
+
+    doc.setDrawColor(200);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += lineHeight;
+
+    doc.setTextColor(0);
+    doc.setFont("helvetica", "bold");
+    doc.text("Contato", margin, y);
+    y += lineHeight;
+    doc.setFont("helvetica", "normal");
+    doc.text(`Email: ${app.email}`, margin, y);
+    y += lineHeight;
+    doc.text(`Telefone: ${app.phone}`, margin, y);
+    y += lineHeight;
+    doc.text(`Localização: ${app.city}, ${app.state}`, margin, y);
+    y += lineHeight * 2;
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Formação", margin, y);
+    y += lineHeight;
+    doc.setFont("helvetica", "normal");
+    doc.text(`Escolaridade: ${app.education_level}`, margin, y);
+    y += lineHeight * 2;
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Experiência", margin, y);
+    y += lineHeight;
+    doc.setFont("helvetica", "normal");
+    const experienceLines = doc.splitTextToSize(app.experience || "Não informado", pageWidth - margin * 2);
+    doc.text(experienceLines, margin, y);
+    y += experienceLines.length * lineHeight + lineHeight;
+
+    if (app.salary_expectation || app.availability) {
+      doc.setFont("helvetica", "bold");
+      doc.text("Informações Adicionais", margin, y);
+      y += lineHeight;
+      doc.setFont("helvetica", "normal");
+      if (app.salary_expectation) {
+        doc.text(`Pretensão Salarial: ${app.salary_expectation}`, margin, y);
+        y += lineHeight;
+      }
+      if (app.availability) {
+        doc.text(`Disponibilidade: ${app.availability}`, margin, y);
+        y += lineHeight;
+      }
+      y += lineHeight;
+    }
+
+    if (app.expectations) {
+      doc.setFont("helvetica", "bold");
+      doc.text("Expectativas", margin, y);
+      y += lineHeight;
+      doc.setFont("helvetica", "normal");
+      const expectLines = doc.splitTextToSize(app.expectations, pageWidth - margin * 2);
+      doc.text(expectLines, margin, y);
+      y += expectLines.length * lineHeight + lineHeight;
+    }
+
+    if (app.linkedin_url || app.portfolio_url) {
+      doc.setFont("helvetica", "bold");
+      doc.text("Links", margin, y);
+      y += lineHeight;
+      doc.setFont("helvetica", "normal");
+      if (app.linkedin_url) {
+        doc.text(`LinkedIn: ${app.linkedin_url}`, margin, y);
+        y += lineHeight;
+      }
+      if (app.portfolio_url) {
+        doc.text(`Portfólio: ${app.portfolio_url}`, margin, y);
+        y += lineHeight;
+      }
+      y += lineHeight;
+    }
+
+    if (app.additional_info) {
+      doc.setFont("helvetica", "bold");
+      doc.text("Observações", margin, y);
+      y += lineHeight;
+      doc.setFont("helvetica", "normal");
+      const notesLines = doc.splitTextToSize(app.additional_info, pageWidth - margin * 2);
+      doc.text(notesLines, margin, y);
+    }
+
+    doc.setTextColor(150);
+    doc.setFontSize(10);
+    doc.text(
+      `Candidatura recebida em ${new Date(app.created_at).toLocaleDateString("pt-BR")}`,
+      margin,
+      doc.internal.pageSize.getHeight() - 15
+    );
+
+    doc.save(`ficha_${app.full_name.replace(/\s+/g, "_")}.pdf`);
+
+    toast({
+      title: "PDF baixado!",
+      description: `Ficha de ${app.full_name} exportada.`,
+    });
+  };
+
+  // Download individual resume
+  const downloadSingleResume = async (app: Application, showToast = true) => {
+    if (!app.resume_url) {
+      if (showToast) {
+        toast({
+          title: "Sem currículo",
+          description: `${app.full_name} não possui currículo anexado.`,
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.storage
+        .from("resumes")
+        .download(app.resume_url);
+
+      if (error) {
+        console.error(`Erro ao baixar currículo de ${app.full_name}:`, error);
+        if (showToast) {
+          toast({
+            title: "Erro",
+            description: `Não foi possível baixar o currículo de ${app.full_name}.`,
+            variant: "destructive",
+          });
+        }
+        return;
+      }
+
+      const extension = app.resume_url.split(".").pop() || "pdf";
+      const fileName = `curriculo_${app.full_name.replace(/\s+/g, "_")}.${extension}`;
+
+      const url = URL.createObjectURL(data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      if (showToast) {
+        toast({
+          title: "Currículo baixado!",
+          description: `Currículo de ${app.full_name} baixado.`,
+        });
+      }
+    } catch (error) {
+      console.error(`Erro ao processar currículo de ${app.full_name}:`, error);
+    }
+  };
+
+  // Download all for a single candidate
+  const downloadAllForCandidate = async (app: Application) => {
+    downloadSinglePDF(app);
+    if (app.resume_url) {
+      await downloadSingleResume(app, false);
+    }
+    toast({
+      title: "Downloads concluídos!",
+      description: `Ficha${app.resume_url ? " e currículo" : ""} de ${app.full_name} baixados.`,
     });
   };
 
@@ -437,14 +604,36 @@ const TodosCandidatos = ({ companyId }: TodosCandidatosProps) => {
                       {new Date(app.created_at).toLocaleDateString("pt-BR")}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedApplication(app)}
-                      >
-                        <Eye size={16} />
-                        Ver Detalhes
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreVertical size={16} />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-card border-border">
+                          <DropdownMenuItem onClick={() => setSelectedApplication(app)}>
+                            <Eye size={16} className="mr-2" />
+                            Ver Detalhes
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => downloadSinglePDF(app)}>
+                            <FileText size={16} className="mr-2" />
+                            Baixar Ficha PDF
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => downloadSingleResume(app)}
+                            disabled={!app.resume_url}
+                          >
+                            <Paperclip size={16} className="mr-2" />
+                            Baixar Currículo
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => downloadAllForCandidate(app)}>
+                            <Download size={16} className="mr-2" />
+                            Baixar Tudo
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -564,14 +753,35 @@ const TodosCandidatos = ({ companyId }: TodosCandidatosProps) => {
                 )}
               </div>
 
-              <div className="pt-4 border-t border-border text-sm text-muted-foreground">
-                Candidatura recebida em {new Date(selectedApplication.created_at).toLocaleDateString("pt-BR", {
-                  day: "2-digit",
-                  month: "long",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+              <div className="pt-4 border-t border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <span className="text-sm text-muted-foreground">
+                  Candidatura recebida em {new Date(selectedApplication.created_at).toLocaleDateString("pt-BR", {
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => downloadSinglePDF(selectedApplication)}>
+                    <FileText size={16} />
+                    Ficha PDF
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => downloadSingleResume(selectedApplication)}
+                    disabled={!selectedApplication.resume_url}
+                  >
+                    <Paperclip size={16} />
+                    Currículo
+                  </Button>
+                  <Button size="sm" onClick={() => downloadAllForCandidate(selectedApplication)}>
+                    <Download size={16} />
+                    Baixar Tudo
+                  </Button>
+                </div>
               </div>
             </div>
           )}
