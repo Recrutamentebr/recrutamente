@@ -15,28 +15,15 @@ const loginSchema = z.object({
   password: z.string().min(6, { message: "Senha deve ter no mínimo 6 caracteres" }),
 });
 
-const signUpSchema = z.object({
-  companyName: z.string().trim().min(2, { message: "Nome da empresa é obrigatório" }).max(100),
-  email: z.string().trim().email({ message: "E-mail inválido" }),
-  password: z.string().min(6, { message: "Senha deve ter no mínimo 6 caracteres" }),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "As senhas não conferem",
-  path: ["confirmPassword"],
-});
-
 const AuthPage = () => {
-  const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [companyName, setCompanyName] = useState("");
 
-  const { signIn, signUp, user, loading } = useAuth();
+  const { signIn, user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -52,66 +39,34 @@ const AuthPage = () => {
     setIsLoading(true);
 
     try {
-      if (isLogin) {
-        const result = loginSchema.safeParse({ email, password });
-        if (!result.success) {
-          const fieldErrors: Record<string, string> = {};
-          result.error.errors.forEach((err) => {
-            if (err.path[0]) {
-              fieldErrors[err.path[0] as string] = err.message;
-            }
-          });
-          setErrors(fieldErrors);
-          setIsLoading(false);
-          return;
-        }
+      const result = loginSchema.safeParse({ email, password });
+      if (!result.success) {
+        const fieldErrors: Record<string, string> = {};
+        result.error.errors.forEach((err) => {
+          if (err.path[0]) {
+            fieldErrors[err.path[0] as string] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+        setIsLoading(false);
+        return;
+      }
 
-        const { error } = await signIn(email, password);
-        if (error) {
-          toast({
-            title: "Erro ao entrar",
-            description: error.message === "Invalid login credentials" 
-              ? "E-mail ou senha incorretos" 
-              : error.message,
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Bem-vindo!",
-            description: "Login realizado com sucesso.",
-          });
-          navigate("/dashboard");
-        }
+      const { error } = await signIn(email, password);
+      if (error) {
+        toast({
+          title: "Erro ao entrar",
+          description: error.message === "Invalid login credentials" 
+            ? "E-mail ou senha incorretos" 
+            : error.message,
+          variant: "destructive",
+        });
       } else {
-        const result = signUpSchema.safeParse({ email, password, confirmPassword, companyName });
-        if (!result.success) {
-          const fieldErrors: Record<string, string> = {};
-          result.error.errors.forEach((err) => {
-            if (err.path[0]) {
-              fieldErrors[err.path[0] as string] = err.message;
-            }
-          });
-          setErrors(fieldErrors);
-          setIsLoading(false);
-          return;
-        }
-
-        const { error } = await signUp(email, password, companyName);
-        if (error) {
-          toast({
-            title: "Erro ao cadastrar",
-            description: error.message === "User already registered" 
-              ? "Este e-mail já está cadastrado. Tente fazer login." 
-              : error.message,
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Conta criada!",
-            description: "Sua conta foi criada com sucesso.",
-          });
-          navigate("/dashboard");
-        }
+        toast({
+          title: "Bem-vindo!",
+          description: "Login realizado com sucesso.",
+        });
+        navigate("/dashboard");
       }
     } catch (error) {
       toast({
@@ -146,10 +101,10 @@ const AuthPage = () => {
               Voltar para Home
             </Link>
             <h1 className="text-3xl sm:text-4xl font-bold text-primary-foreground mb-2">
-              Área da Empresa
+              Área Administrativa
             </h1>
             <p className="text-lg text-primary-foreground/80">
-              {isLogin ? "Faça login para gerenciar suas vagas" : "Cadastre sua empresa"}
+              Faça login para gerenciar suas vagas
             </p>
           </div>
         </section>
@@ -164,47 +119,11 @@ const AuthPage = () => {
                   </div>
                 </div>
 
-                <div className="flex bg-secondary rounded-xl p-1 mb-8">
-                  <button
-                    onClick={() => setIsLogin(true)}
-                    className={`flex-1 py-3 rounded-lg font-medium transition-all ${
-                      isLogin
-                        ? "bg-card text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    Entrar
-                  </button>
-                  <button
-                    onClick={() => setIsLogin(false)}
-                    className={`flex-1 py-3 rounded-lg font-medium transition-all ${
-                      !isLogin
-                        ? "bg-card text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    Cadastrar
-                  </button>
-                </div>
+                <h2 className="text-2xl font-bold text-foreground text-center mb-8">
+                  Entrar
+                </h2>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
-                  {!isLogin && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">
-                        Nome da Empresa *
-                      </label>
-                      <Input
-                        value={companyName}
-                        onChange={(e) => setCompanyName(e.target.value)}
-                        placeholder="Nome da sua empresa"
-                        className="h-12 bg-background"
-                      />
-                      {errors.companyName && (
-                        <p className="text-destructive text-xs">{errors.companyName}</p>
-                      )}
-                    </div>
-                  )}
-
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground">
                       E-mail *
@@ -213,7 +132,7 @@ const AuthPage = () => {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="empresa@exemplo.com"
+                      placeholder="admin@exemplo.com"
                       className="h-12 bg-background"
                     />
                     {errors.email && (
@@ -246,61 +165,17 @@ const AuthPage = () => {
                     )}
                   </div>
 
-                  {!isLogin && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">
-                        Confirmar Senha *
-                      </label>
-                      <Input
-                        type={showPassword ? "text" : "password"}
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="h-12 bg-background"
-                      />
-                      {errors.confirmPassword && (
-                        <p className="text-destructive text-xs">{errors.confirmPassword}</p>
-                      )}
-                    </div>
-                  )}
-
                   <Button type="submit" className="w-full h-12" disabled={isLoading}>
                     {isLoading ? (
                       <>
                         <Loader2 className="animate-spin mr-2" size={18} />
-                        {isLogin ? "Entrando..." : "Cadastrando..."}
+                        Entrando...
                       </>
-                    ) : isLogin ? (
-                      "Entrar"
                     ) : (
-                      "Cadastrar Empresa"
+                      "Entrar"
                     )}
                   </Button>
                 </form>
-
-                <p className="text-center text-muted-foreground text-sm mt-6">
-                  {isLogin ? (
-                    <>
-                      Não tem uma conta?{" "}
-                      <button
-                        onClick={() => setIsLogin(false)}
-                        className="text-accent hover:underline font-medium"
-                      >
-                        Cadastre-se
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      Já tem uma conta?{" "}
-                      <button
-                        onClick={() => setIsLogin(true)}
-                        className="text-accent hover:underline font-medium"
-                      >
-                        Faça login
-                      </button>
-                    </>
-                  )}
-                </p>
               </div>
             </div>
           </div>
