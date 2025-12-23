@@ -87,6 +87,7 @@ export type Database = {
       }
       client_company_access: {
         Row: {
+          client_email: string | null
           client_user_id: string
           company_id: string
           created_at: string
@@ -94,6 +95,7 @@ export type Database = {
           id: string
         }
         Insert: {
+          client_email?: string | null
           client_user_id: string
           company_id: string
           created_at?: string
@@ -101,6 +103,7 @@ export type Database = {
           id?: string
         }
         Update: {
+          client_email?: string | null
           client_user_id?: string
           company_id?: string
           created_at?: string
@@ -113,6 +116,35 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_job_access: {
+        Row: {
+          client_user_id: string
+          created_at: string
+          id: string
+          job_id: string
+        }
+        Insert: {
+          client_user_id: string
+          created_at?: string
+          id?: string
+          job_id: string
+        }
+        Update: {
+          client_user_id?: string
+          created_at?: string
+          id?: string
+          job_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_job_access_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
         ]

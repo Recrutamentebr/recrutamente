@@ -111,31 +111,30 @@ const ClientePortalPage = () => {
         return;
       }
 
-      // Fetch jobs that this client has access to
-      const { data: accessData } = await supabase
-        .from("client_company_access")
-        .select("company_id")
+      // Fetch job access for this client (specific jobs, not all from company)
+      const { data: jobAccessData } = await supabase
+        .from("client_job_access")
+        .select("job_id")
         .eq("client_user_id", session.user.id);
 
-      if (!accessData || accessData.length === 0) {
+      if (!jobAccessData || jobAccessData.length === 0) {
         setLoading(false);
         return;
       }
 
-      const companyIds = accessData.map(a => a.company_id);
+      const jobIds = jobAccessData.map(a => a.job_id);
 
-      // Fetch jobs from those companies
+      // Fetch jobs that the client has access to
       const { data: jobsData } = await supabase
         .from("jobs")
         .select("*")
-        .in("company_id", companyIds)
+        .in("id", jobIds)
         .order("created_at", { ascending: false });
 
       setJobs(jobsData || []);
 
       // Fetch applications for those jobs
       if (jobsData && jobsData.length > 0) {
-        const jobIds = jobsData.map(j => j.id);
         const { data: appsData } = await supabase
           .from("applications")
           .select("*")
