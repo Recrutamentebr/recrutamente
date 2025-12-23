@@ -390,47 +390,6 @@ export const CandidatoPDFSimples = forwardRef<HTMLDivElement, CandidatoPDFSimple
             </div>
           </div>
 
-          {/* Resume Download Section - Centered */}
-          {application.resume_url && (
-            <div
-              style={{
-                textAlign: "center",
-                marginBottom: "32px",
-                padding: "32px",
-                background: "linear-gradient(135deg, #FEF3C7, #FDE68A)",
-                borderRadius: "16px",
-                border: "2px solid #F59E0B",
-                boxShadow: "0 8px 24px -8px rgba(245, 158, 11, 0.3)",
-              }}
-            >
-              <p style={{ fontSize: "12px", color: "#92400E", margin: 0, textTransform: "uppercase", letterSpacing: "1.5px", fontWeight: "700" }}>
-                📎 Currículo do Candidato
-              </p>
-              <a
-                href={application.resume_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: "inline-block",
-                  marginTop: "16px",
-                  padding: "14px 40px",
-                  backgroundColor: "#F59E0B",
-                  color: "#FFFFFF",
-                  fontSize: "15px",
-                  fontWeight: "700",
-                  textDecoration: "none",
-                  borderRadius: "10px",
-                  boxShadow: "0 4px 16px rgba(245, 158, 11, 0.4)",
-                  letterSpacing: "0.5px",
-                }}
-              >
-                ⬇️ BAIXAR CURRÍCULO
-              </a>
-              <p style={{ fontSize: "11px", color: "#92400E", margin: "16px 0 0 0", wordBreak: "break-all", opacity: 0.8 }}>
-                {application.resume_url}
-              </p>
-            </div>
-          )}
 
           {/* Additional Information - Centered */}
           {(application.expectations || application.additional_info) && (
