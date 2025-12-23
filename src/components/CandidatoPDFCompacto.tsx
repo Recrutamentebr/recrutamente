@@ -422,7 +422,7 @@ export const CandidatoPDFCompacto = forwardRef<HTMLDivElement, CandidatoPDFCompa
               }}
             >
               <span style={{ fontSize: "9px", color: "#9CA3AF" }}>
-                Documento Confidencial • Uso Exclusivo para Processo Seletivo • www.recrutamente.com.br
+                Documento Confidencial • Uso Exclusivo para Processo Seletivo • www.recrutamente.site
               </span>
             </div>
           </div>

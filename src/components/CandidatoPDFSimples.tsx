@@ -780,7 +780,7 @@ export const CandidatoPDFSimples = forwardRef<HTMLDivElement, CandidatoPDFSimple
               Documento Confidencial • Uso Exclusivo para Processo Seletivo
             </p>
             <p style={{ fontSize: "10px", color: "#D1D5DB", margin: "8px 0 0 0" }}>
-              www.recrutamente.com.br
+              www.recrutamente.site
             </p>
           </div>
         </div>
