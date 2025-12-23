@@ -95,18 +95,10 @@
 
   html {
     scroll-behavior: smooth;
-    color-scheme: light only;
   }
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-  }
-}
-
-/* Force light mode regardless of system preference */
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: light only;
   }
 }
 
