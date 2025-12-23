@@ -196,16 +196,75 @@ const ClienteLoginPage = () => {
       navigate("/cliente");
     } catch (error: any) {
       console.error("Error creating account:", error);
-      let message = "Ocorreu um erro ao criar sua conta.";
+      
+      // Handle case where user already exists in auth but database wasn't updated
       if (error.message?.includes("already registered")) {
-        message = "Este e-mail já está registrado. Tente fazer login.";
+        try {
+          // Try to sign in with the provided password
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+          if (signInError) {
+            // Password is wrong, redirect to login
+            toast({
+              title: "Usuário já registrado",
+              description: "Este e-mail já está registrado. Digite sua senha para entrar.",
+              variant: "destructive",
+            });
+            setStep("login");
+            setIsLoading(false);
+            return;
+          }
+
+          if (signInData?.user && invitationData) {
+            // Update client_company_access with the existing user id
+            await supabase
+              .from("client_company_access")
+              .update({
+                client_user_id: signInData.user.id,
+                password_set: true,
+              })
+              .eq("id", invitationData.id);
+
+            // Transfer pending job access
+            if (invitationData.pending_job_ids && invitationData.pending_job_ids.length > 0) {
+              const jobAccessInserts = invitationData.pending_job_ids.map(jobId => ({
+                client_user_id: signInData.user.id,
+                job_id: jobId,
+              }));
+
+              await supabase
+                .from("client_job_access")
+                .upsert(jobAccessInserts, { onConflict: 'client_user_id,job_id' });
+            }
+
+            toast({
+              title: "Conta ativada!",
+              description: "Sua conta foi vinculada com sucesso.",
+            });
+
+            navigate("/cliente");
+            return;
+          }
+        } catch (recoveryError) {
+          console.error("Error recovering existing user:", recoveryError);
+        }
+        
+        toast({
+          title: "Erro",
+          description: "Este e-mail já está registrado. Tente fazer login.",
+          variant: "destructive",
+        });
         setStep("login");
+      } else {
+        toast({
+          title: "Erro",
+          description: "Ocorreu um erro ao criar sua conta.",
+          variant: "destructive",
+        });
       }
-      toast({
-        title: "Erro",
-        description: message,
-        variant: "destructive",
-      });
     } finally {
       setIsLoading(false);
     }
