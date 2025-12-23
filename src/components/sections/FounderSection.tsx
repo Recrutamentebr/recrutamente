@@ -41,7 +41,7 @@ export const FounderSection = () => {
                 <Award className="text-accent" size={24} />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-foreground">Fundador</h3>
+                <h3 className="text-xl font-bold text-foreground">Denys Lira</h3>
                 <p className="text-muted-foreground text-sm">Bacharel em Direito</p>
               </div>
             </div>
