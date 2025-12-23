@@ -424,9 +424,9 @@ export const generateBulkPDF = async (
       pdf.setFillColor(30, 58, 138);
       pdf.rect(0, 0, imgWidth, 3, 'F');
       
-      // Add logo image
+      // Add logo image (proportional size)
       if (logoBase64) {
-        pdf.addImage(logoBase64, 'PNG', 10, 5, 30, 10);
+        pdf.addImage(logoBase64, 'PNG', 10, 5, 22, 8);
       } else {
         pdf.setFontSize(12);
         pdf.setTextColor(30, 58, 138);
