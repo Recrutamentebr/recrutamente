@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ChevronLeft, Download, Mail, Phone, MapPin, Briefcase, Loader2, FileText, ExternalLink, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getQuestionLabel } from "@/data/customQuestions";
+import { FitCulturalAnalysis } from "@/components/FitCulturalAnalysis";
+import { CandidatoPDFReport } from "@/components/CandidatoPDFReport";
+import { generateCandidatePDF, calculateAnalysisData } from "@/utils/generateCandidatePDF";
 
 interface Application {
   id: string;
@@ -67,6 +70,8 @@ const VagaCandidaturasPage = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
+  const [generatingPDF, setGeneratingPDF] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!user || !company) {
@@ -206,6 +211,32 @@ const VagaCandidaturasPage = () => {
         description: "Não foi possível baixar o currículo.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleGeneratePDF = async () => {
+    if (!selectedApplication || !job) return;
+    
+    setGeneratingPDF(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    try {
+      if (reportRef.current) {
+        await generateCandidatePDF(reportRef.current, selectedApplication, job);
+        toast({
+          title: "PDF gerado",
+          description: "O relatório foi baixado com sucesso.",
+        });
+      }
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível gerar o PDF.",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingPDF(false);
     }
   };
 
@@ -374,7 +405,24 @@ const VagaCandidaturasPage = () => {
                         </div>
                       )}
 
+                      {/* Fit Cultural Analysis */}
+                      <div className="mb-6 p-4 bg-secondary/30 rounded-xl">
+                        <FitCulturalAnalysis customAnswers={selectedApplication.custom_answers} />
+                      </div>
+
                       <div className="flex flex-wrap gap-3 pt-4 border-t border-border">
+                        <Button
+                          variant="default"
+                          onClick={handleGeneratePDF}
+                          disabled={generatingPDF}
+                        >
+                          {generatingPDF ? (
+                            <Loader2 size={16} className="animate-spin" />
+                          ) : (
+                            <FileText size={16} />
+                          )}
+                          Gerar Relatório PDF
+                        </Button>
                         {selectedApplication.resume_url && (
                           <Button
                             variant="outline"
@@ -498,6 +546,18 @@ Seja bem-vindo(a)!`)}`}
       </main>
       <Footer />
       <WhatsAppButton />
+      
+      {/* Hidden PDF Report for generation */}
+      {selectedApplication && job && (
+        <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
+          <CandidatoPDFReport
+            ref={reportRef}
+            application={selectedApplication}
+            job={job}
+            analysisData={calculateAnalysisData(selectedApplication.custom_answers)}
+          />
+        </div>
+      )}
     </div>
   );
 };
