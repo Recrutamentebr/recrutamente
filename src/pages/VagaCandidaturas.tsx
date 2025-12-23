@@ -409,14 +409,40 @@ const VagaCandidaturasPage = () => {
                             Enviar E-mail
                           </a>
                         </Button>
-                        <Button variant="outline" asChild>
+                        <Button variant="outline" className="border-red-300 text-red-600 hover:bg-red-50" asChild>
                           <a
-                            href={`https://wa.me/55${selectedApplication.phone.replace(/\D/g, "")}`}
+                            href={`https://wa.me/55${selectedApplication.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Olá!
+
+Agradecemos por ter participado do processo seletivo pela RecrutaMente.
+
+Neste momento, seu perfil não foi selecionado para esta vaga.
+
+Seu currículo permanecerá em nosso banco de talentos para futuras oportunidades.
+
+Continue acompanhando nossas vagas pela plataforma.`)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                           >
                             <Phone size={16} />
-                            WhatsApp
+                            Não Selecionado
+                          </a>
+                        </Button>
+                        <Button variant="outline" className="border-green-300 text-green-600 hover:bg-green-50" asChild>
+                          <a
+                            href={`https://wa.me/55${selectedApplication.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Parabéns! 🎉
+
+Temos o prazer de informar que você foi selecionado(a) para a vaga.
+
+Gostaríamos de formalizar sua aprovação e alinhar os próximos passos do processo seletivo.
+
+Em breve, nossa equipe entrará em contato com mais informações.
+
+Seja bem-vindo(a)!`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Phone size={16} />
+                            Selecionado
                           </a>
                         </Button>
                         <AlertDialog>
