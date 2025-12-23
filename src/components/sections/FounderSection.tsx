@@ -1,4 +1,4 @@
-import { MapPin, Award, Linkedin } from "lucide-react";
+import { MapPin, Award } from "lucide-react";
 import founderPhoto from "@/assets/founder-photo.jpeg";
 export const FounderSection = () => {
   return <section id="quem-somos" className="py-20 bg-card">
@@ -35,19 +35,8 @@ export const FounderSection = () => {
                 <Award className="text-accent" size={24} />
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-xl font-bold text-foreground">Denys Lira</h3>
-                  <a 
-                    href="https://www.linkedin.com/in/denyslira" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-accent hover:text-accent/80 transition-colors"
-                    aria-label="LinkedIn de Denys Lira"
-                  >
-                    <Linkedin size={20} />
-                  </a>
-                </div>
-                <p className="text-muted-foreground text-sm">Fundador</p>
+                <h3 className="text-xl font-bold text-foreground">Fundador</h3>
+                <p className="text-muted-foreground text-sm">Bacharel em Direito</p>
               </div>
             </div>
 
@@ -55,7 +44,7 @@ export const FounderSection = () => {
             </p>
 
             <p className="text-foreground leading-relaxed">
-              Profissional orientado a resultados, com atuação em empresas de grande porte e relevância nacional e internacional, como <span className="font-semibold">Thomson Reuters, Ortobom, Grupo Infinity, Grupo Ser Educacional, Câmara Ítalo-Brasileira de Comércio e Indústria, Grow, Fiplan e Orizon Valorização de Resíduos</span>, liderando projetos, estruturando equipes e desenvolvendo soluções estratégicas voltadas ao crescimento sustentável.
+              Profissional orientado a resultados, com atuação em empresas de grande porte e relevância nacional e internacional, como <span className="font-semibold">Bacharel em Direito, com mais de 15 anos de experiência profissional nas áreas de jurídico consultivo, gestão de carteira de clientes, consultoria em gestão financeira estratégica, valuation, M&A (Fusões e Aquisições) e gestão de pessoas.15 anos de experiência profissional nas áreas de jurídico consultivo, gestão de carteira de clientes, consultoria em gestão financeira estratégica, valuation, M&A (Fusões e Aquisições) e gestão de pessoas.</span>, liderando projetos, estruturando equipes e desenvolvendo soluções estratégicas voltadas ao crescimento sustentável.
             </p>
 
             <p className="text-foreground leading-relaxed">
