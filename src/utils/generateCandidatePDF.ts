@@ -205,71 +205,13 @@ export const generateSimplePDF = async (
     const pdf = new jsPDF("p", "mm", "a4");
     const imgWidth = 210; // A4 width in mm
     const pageHeight = 297; // A4 height in mm
-    const headerHeight = 25; // Space for logo header on each page
+    const topMargin = 5; // Small top margin
     const footerHeight = 10; // Space for footer
-    const usableHeight = pageHeight - headerHeight - footerHeight;
+    const usableHeight = pageHeight - topMargin - footerHeight;
 
     // Get all sections marked with data-section attribute
     const sections = reportElement.querySelectorAll('[data-section]');
     const containerWidth = reportElement.offsetWidth || 794;
-
-    // Load logo image as base64
-    const loadLogoAsBase64 = (): Promise<string> => {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0);
-            resolve(canvas.toDataURL('image/png'));
-          } else {
-            reject(new Error('Could not get canvas context'));
-          }
-        };
-        img.onerror = reject;
-        img.src = logoRecrutamente;
-      });
-    };
-
-    let logoBase64: string | null = null;
-    try {
-      logoBase64 = await loadLogoAsBase64();
-    } catch (e) {
-      console.warn('Could not load logo:', e);
-    }
-
-    // Function to add header with logo to each page
-    const addPageHeader = (pageNum: number, totalPages: number) => {
-      // Add decorative top bar
-      pdf.setFillColor(30, 58, 138);
-      pdf.rect(0, 0, imgWidth, 3, 'F');
-      
-      // Add logo image
-      if (logoBase64) {
-        pdf.addImage(logoBase64, 'PNG', 10, 6, 35, 12);
-      } else {
-        // Fallback to text
-        pdf.setFontSize(14);
-        pdf.setTextColor(30, 58, 138);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('RecrutaMente', 10, 15);
-      }
-      
-      // Add page number
-      pdf.setFontSize(9);
-      pdf.setTextColor(107, 114, 128);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Página ${pageNum} de ${totalPages}`, imgWidth - 10, 15, { align: 'right' });
-      
-      // Add separator line
-      pdf.setDrawColor(229, 231, 235);
-      pdf.setLineWidth(0.5);
-      pdf.line(10, 20, imgWidth - 10, 20);
-    };
 
     // Function to add footer
     const addPageFooter = () => {
@@ -296,8 +238,6 @@ export const generateSimplePDF = async (
           pdf.addPage();
         }
         
-        addPageHeader(page + 1, totalPages);
-        
         // Calculate source and destination positions
         const srcY = page * (canvas.height / totalPages);
         const srcHeight = canvas.height / totalPages;
@@ -314,7 +254,7 @@ export const generateSimplePDF = async (
             tempCanvas.toDataURL("image/jpeg", 0.95),
             "JPEG",
             0,
-            headerHeight,
+            topMargin,
             imgWidth,
             usableHeight
           );
@@ -351,7 +291,7 @@ export const generateSimplePDF = async (
           pdf.addPage();
         }
 
-        addPageHeader(pageIndex + 1, totalPages);
+        // No header needed - the HTML already has the logo
 
         const pageGroup = sectionGroups[pageIndex];
         
@@ -391,7 +331,7 @@ export const generateSimplePDF = async (
           canvas.toDataURL("image/jpeg", 0.95),
           "JPEG",
           0,
-          headerHeight,
+          topMargin,
           imgWidth,
           Math.min(imgHeight, usableHeight)
         );
