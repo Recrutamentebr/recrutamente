@@ -194,59 +194,36 @@ export const generateCandidatePDF = async (
   }
 };
 
-// Simplified PDF generation for the candidate report
+// Simplified PDF generation for the candidate report - with smart page breaks
 export const generateSimplePDF = async (
   reportElement: HTMLElement,
   candidateName: string,
   resumeUrl?: string | null
 ): Promise<void> => {
   try {
-    const canvas = await html2canvas(reportElement, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      backgroundColor: "#ffffff",
-      allowTaint: true,
-    });
-
-    const imgWidth = 210;
-    const pageHeight = 297;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    
     const pdf = new jsPDF("p", "mm", "a4");
-    
-    let heightLeft = imgHeight;
-    let position = 0;
-    
-    pdf.addImage(
-      canvas.toDataURL("image/jpeg", 0.95),
-      "JPEG",
-      0,
-      position,
-      imgWidth,
-      imgHeight
-    );
+    const imgWidth = 210; // A4 width in mm
+    const pageHeight = 297; // A4 height in mm
+    const margin = 0; // No margin since component has its own padding
+    const usableHeight = pageHeight - margin * 2;
 
-    // Add clickable link for resume if URL exists
-    if (resumeUrl) {
-      // Calculate the position of the resume button based on the scale
-      // The resume section is approximately at 60% of the first page
-      const scaleRatio = imgWidth / canvas.width;
-      // Position the link over the "BAIXAR CURRÍCULO" button area
-      // These values are approximated based on the PDF layout
-      const linkX = 45; // Start from left margin
-      const linkY = 165; // Approximate Y position of the button
-      const linkWidth = 120; // Width of the clickable area
-      const linkHeight = 20; // Height of the clickable area
+    // Get all sections marked with data-section attribute
+    const sections = reportElement.querySelectorAll('[data-section]');
+    
+    if (sections.length === 0) {
+      // Fallback to old method if no sections found
+      const canvas = await html2canvas(reportElement, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+        allowTaint: true,
+      });
+
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
       
-      pdf.link(linkX, linkY, linkWidth, linkHeight, { url: resumeUrl });
-    }
-    
-    heightLeft -= pageHeight;
-    
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
       pdf.addImage(
         canvas.toDataURL("image/jpeg", 0.95),
         "JPEG",
@@ -256,6 +233,104 @@ export const generateSimplePDF = async (
         imgHeight
       );
       heightLeft -= pageHeight;
+      
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(
+          canvas.toDataURL("image/jpeg", 0.95),
+          "JPEG",
+          0,
+          position,
+          imgWidth,
+          imgHeight
+        );
+        heightLeft -= pageHeight;
+      }
+    } else {
+      // Smart section-based rendering
+      let currentY = margin;
+      let isFirstPage = true;
+
+      // Group sections into pages
+      const sectionGroups: HTMLElement[][] = [[]];
+      let currentPageHeight = 0;
+      const containerWidth = reportElement.offsetWidth;
+      const scale = imgWidth / containerWidth * 25.4 / 96 * 2; // Convert px to mm with scale factor
+
+      for (let i = 0; i < sections.length; i++) {
+        const section = sections[i] as HTMLElement;
+        const sectionHeightPx = section.offsetHeight;
+        const sectionHeightMm = (sectionHeightPx * imgWidth) / containerWidth;
+
+        // Check if section fits on current page
+        if (currentPageHeight + sectionHeightMm > usableHeight && sectionGroups[sectionGroups.length - 1].length > 0) {
+          // Start new page
+          sectionGroups.push([]);
+          currentPageHeight = 0;
+        }
+
+        sectionGroups[sectionGroups.length - 1].push(section);
+        currentPageHeight += sectionHeightMm;
+      }
+
+      // Render each page
+      for (let pageIndex = 0; pageIndex < sectionGroups.length; pageIndex++) {
+        if (pageIndex > 0) {
+          pdf.addPage();
+        }
+
+        const pageGroup = sectionGroups[pageIndex];
+        
+        // Create a temporary container for this page's sections
+        const tempContainer = document.createElement('div');
+        tempContainer.style.width = `${containerWidth}px`;
+        tempContainer.style.backgroundColor = '#FFFFFF';
+        tempContainer.style.position = 'absolute';
+        tempContainer.style.left = '-9999px';
+        tempContainer.style.top = '0';
+        tempContainer.style.padding = '48px 56px';
+        tempContainer.style.fontFamily = "'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
+        document.body.appendChild(tempContainer);
+
+        // Clone sections for this page
+        for (const section of pageGroup) {
+          const clonedSection = section.cloneNode(true) as HTMLElement;
+          tempContainer.appendChild(clonedSection);
+        }
+
+        // Render the container
+        const canvas = await html2canvas(tempContainer, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: "#ffffff",
+          allowTaint: true,
+        });
+
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        pdf.addImage(
+          canvas.toDataURL("image/jpeg", 0.95),
+          "JPEG",
+          0,
+          0,
+          imgWidth,
+          imgHeight
+        );
+
+        // Remove temporary container
+        document.body.removeChild(tempContainer);
+      }
+    }
+
+    // Add clickable link for resume if URL exists
+    if (resumeUrl) {
+      const linkX = 45;
+      const linkY = 165;
+      const linkWidth = 120;
+      const linkHeight = 20;
+      pdf.link(linkX, linkY, linkWidth, linkHeight, { url: resumeUrl });
     }
 
     const sanitizedName = candidateName

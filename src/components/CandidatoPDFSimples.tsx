@@ -180,6 +180,7 @@ export const CandidatoPDFSimples = forwardRef<HTMLDivElement, CandidatoPDFSimple
         <div style={{ padding: "48px 56px", position: "relative", zIndex: 1 }}>
           {/* Header */}
           <div
+            data-section="header"
             style={{
               display: "flex",
               justifyContent: "space-between",
@@ -187,6 +188,8 @@ export const CandidatoPDFSimples = forwardRef<HTMLDivElement, CandidatoPDFSimple
               marginBottom: "40px",
               paddingBottom: "24px",
               borderBottom: "2px solid #E5E7EB",
+              pageBreakInside: "avoid",
+              breakInside: "avoid",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -224,6 +227,7 @@ export const CandidatoPDFSimples = forwardRef<HTMLDivElement, CandidatoPDFSimple
 
           {/* Candidate Name Section - Centered */}
           <div
+            data-section="candidate-name"
             style={{
               textAlign: "center",
               marginBottom: "36px",
@@ -231,6 +235,8 @@ export const CandidatoPDFSimples = forwardRef<HTMLDivElement, CandidatoPDFSimple
               background: "linear-gradient(135deg, #1E3A8A, #2563EB)",
               borderRadius: "16px",
               boxShadow: "0 10px 40px -10px rgba(30, 58, 138, 0.4)",
+              pageBreakInside: "avoid",
+              breakInside: "avoid",
             }}
           >
             <div
@@ -284,11 +290,14 @@ export const CandidatoPDFSimples = forwardRef<HTMLDivElement, CandidatoPDFSimple
 
           {/* Contact Information - Centered Grid */}
           <div
+            data-section="contact-info"
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr 1fr",
               gap: "16px",
               marginBottom: "32px",
+              pageBreakInside: "avoid",
+              breakInside: "avoid",
             }}
           >
             <div
@@ -343,6 +352,7 @@ export const CandidatoPDFSimples = forwardRef<HTMLDivElement, CandidatoPDFSimple
 
           {/* Job Applied Section - Centered */}
           <div
+            data-section="job-info"
             style={{
               textAlign: "center",
               marginBottom: "32px",
@@ -350,6 +360,8 @@ export const CandidatoPDFSimples = forwardRef<HTMLDivElement, CandidatoPDFSimple
               background: "linear-gradient(135deg, #ECFDF5, #D1FAE5)",
               borderRadius: "12px",
               border: "1px solid #A7F3D0",
+              pageBreakInside: "avoid",
+              breakInside: "avoid",
             }}
           >
             <p style={{ fontSize: "11px", color: "#047857", margin: 0, textTransform: "uppercase", letterSpacing: "1.5px", fontWeight: "700" }}>
@@ -364,7 +376,14 @@ export const CandidatoPDFSimples = forwardRef<HTMLDivElement, CandidatoPDFSimple
           </div>
 
           {/* Professional Information - Centered Grid */}
-          <div style={{ marginBottom: "32px" }}>
+          <div 
+            data-section="professional-info"
+            style={{ 
+              marginBottom: "32px",
+              pageBreakInside: "avoid",
+              breakInside: "avoid",
+            }}
+          >
             <h3
               style={{
                 fontSize: "13px",
@@ -458,56 +477,72 @@ export const CandidatoPDFSimples = forwardRef<HTMLDivElement, CandidatoPDFSimple
 
 
           {/* Additional Information - Centered */}
-          {(application.expectations || application.additional_info) && (
-            <div style={{ marginBottom: "32px" }}>
-              {application.expectations && (
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: "28px",
-                    backgroundColor: "#F8FAFC",
-                    borderRadius: "12px",
-                    border: "1px solid #E2E8F0",
-                    marginBottom: "16px",
-                  }}
-                >
-                  <p style={{ fontSize: "11px", color: "#64748B", margin: 0, textTransform: "uppercase", letterSpacing: "1.5px", fontWeight: "700" }}>
-                    🎯 Expectativas
-                  </p>
-                  <p style={{ fontSize: "14px", color: "#334155", margin: "14px 0 0 0", lineHeight: "1.7" }}>
-                    {application.expectations}
-                  </p>
-                </div>
-              )}
-              {application.additional_info && (
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: "28px",
-                    backgroundColor: "#F8FAFC",
-                    borderRadius: "12px",
-                    border: "1px solid #E2E8F0",
-                  }}
-                >
-                  <p style={{ fontSize: "11px", color: "#64748B", margin: 0, textTransform: "uppercase", letterSpacing: "1.5px", fontWeight: "700" }}>
-                    📝 Informações Adicionais
-                  </p>
-                  <p style={{ fontSize: "14px", color: "#334155", margin: "14px 0 0 0", lineHeight: "1.7" }}>
-                    {application.additional_info}
-                  </p>
-                </div>
-              )}
+          {application.expectations && (
+            <div 
+              data-section="expectations"
+              style={{ 
+                marginBottom: "16px",
+                pageBreakInside: "avoid",
+                breakInside: "avoid",
+              }}
+            >
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "28px",
+                  backgroundColor: "#F8FAFC",
+                  borderRadius: "12px",
+                  border: "1px solid #E2E8F0",
+                }}
+              >
+                <p style={{ fontSize: "11px", color: "#64748B", margin: 0, textTransform: "uppercase", letterSpacing: "1.5px", fontWeight: "700" }}>
+                  🎯 Expectativas
+                </p>
+                <p style={{ fontSize: "14px", color: "#334155", margin: "14px 0 0 0", lineHeight: "1.7" }}>
+                  {application.expectations}
+                </p>
+              </div>
+            </div>
+          )}
+          {application.additional_info && (
+            <div 
+              data-section="additional-info"
+              style={{ 
+                marginBottom: "32px",
+                pageBreakInside: "avoid",
+                breakInside: "avoid",
+              }}
+            >
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "28px",
+                  backgroundColor: "#F8FAFC",
+                  borderRadius: "12px",
+                  border: "1px solid #E2E8F0",
+                }}
+              >
+                <p style={{ fontSize: "11px", color: "#64748B", margin: 0, textTransform: "uppercase", letterSpacing: "1.5px", fontWeight: "700" }}>
+                  📝 Informações Adicionais
+                </p>
+                <p style={{ fontSize: "14px", color: "#334155", margin: "14px 0 0 0", lineHeight: "1.7" }}>
+                  {application.additional_info}
+                </p>
+              </div>
             </div>
           )}
 
           {/* Links Section - Centered */}
           {(application.linkedin_url || application.portfolio_url) && (
             <div
+              data-section="links"
               style={{
                 display: "grid",
                 gridTemplateColumns: application.linkedin_url && application.portfolio_url ? "1fr 1fr" : "1fr",
                 gap: "16px",
                 marginBottom: "32px",
+                pageBreakInside: "avoid",
+                breakInside: "avoid",
               }}
             >
               {application.linkedin_url && (
@@ -557,108 +592,123 @@ export const CandidatoPDFSimples = forwardRef<HTMLDivElement, CandidatoPDFSimple
 
           {/* Scored Questions Analysis - Only shown if there are answers */}
           {answerAnalysis.length > 0 && (
-            <div style={{ marginBottom: "32px" }}>
-              <h3
-                style={{
-                  fontSize: "13px",
-                  fontWeight: "700",
-                  color: "#1E3A8A",
-                  margin: "0 0 20px 0",
-                  textTransform: "uppercase",
-                  letterSpacing: "1.5px",
-                  textAlign: "center",
+            <>
+              <div 
+                data-section="analysis-header"
+                style={{ 
+                  marginBottom: "12px",
+                  pageBreakInside: "avoid",
+                  breakInside: "avoid",
                 }}
               >
-                📊 Avaliação das Respostas
-              </h3>
+                <h3
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: "700",
+                    color: "#1E3A8A",
+                    margin: "0",
+                    textTransform: "uppercase",
+                    letterSpacing: "1.5px",
+                    textAlign: "center",
+                  }}
+                >
+                  📊 Avaliação das Respostas
+                </h3>
+              </div>
               
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                {answerAnalysis.map((item, index) => {
-                  const color = getScoreColor(item.score);
-                  return (
-                    <div
-                      key={index}
+              {answerAnalysis.map((item, index) => {
+                const color = getScoreColor(item.score);
+                return (
+                  <div
+                    key={index}
+                    data-section={`question-${index}`}
+                    style={{
+                      padding: "16px 20px",
+                      backgroundColor: "#F8FAFC",
+                      borderRadius: "10px",
+                      border: "1px solid #E2E8F0",
+                      marginBottom: "12px",
+                      pageBreakInside: "avoid",
+                      breakInside: "avoid",
+                    }}
+                  >
+                    <p
                       style={{
-                        padding: "16px 20px",
-                        backgroundColor: "#F8FAFC",
-                        borderRadius: "10px",
-                        border: "1px solid #E2E8F0",
+                        fontSize: "12px",
+                        color: "#64748B",
+                        margin: "0 0 8px 0",
+                        fontWeight: "600",
+                      }}
+                    >
+                      {item.question}
+                    </p>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                        gap: "8px",
                       }}
                     >
                       <p
                         style={{
-                          fontSize: "12px",
-                          color: "#64748B",
-                          margin: "0 0 8px 0",
-                          fontWeight: "600",
+                          fontSize: "14px",
+                          color: "#1E293B",
+                          margin: 0,
+                          fontWeight: "500",
+                          flex: 1,
                         }}
                       >
-                        {item.question}
+                        {item.answer}
                       </p>
                       <div
                         style={{
                           display: "flex",
-                          justifyContent: "space-between",
                           alignItems: "center",
-                          flexWrap: "wrap",
                           gap: "8px",
                         }}
                       >
-                        <p
+                        <span
                           style={{
-                            fontSize: "14px",
-                            color: "#1E293B",
-                            margin: 0,
-                            fontWeight: "500",
-                            flex: 1,
+                            padding: "4px 12px",
+                            backgroundColor: color.bg,
+                            color: color.text,
+                            borderRadius: "16px",
+                            fontSize: "11px",
+                            fontWeight: "700",
+                            border: `1px solid ${color.border}`,
                           }}
                         >
-                          {item.answer}
-                        </p>
-                        <div
+                          {item.label}
+                        </span>
+                        <span
                           style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
+                            fontSize: "12px",
+                            color: "#64748B",
+                            fontWeight: "600",
                           }}
                         >
-                          <span
-                            style={{
-                              padding: "4px 12px",
-                              backgroundColor: color.bg,
-                              color: color.text,
-                              borderRadius: "16px",
-                              fontSize: "11px",
-                              fontWeight: "700",
-                              border: `1px solid ${color.border}`,
-                            }}
-                          >
-                            {item.label}
-                          </span>
-                          <span
-                            style={{
-                              fontSize: "12px",
-                              color: "#64748B",
-                              fontWeight: "600",
-                            }}
-                          >
-                            {item.score}/{item.maxScore}
-                          </span>
-                        </div>
+                          {item.score}/{item.maxScore}
+                        </span>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })}
 
               {/* Total Score */}
               <div
+                data-section="total-score"
                 style={{
-                  marginTop: "16px",
+                  marginTop: "4px",
+                  marginBottom: "32px",
                   padding: "20px",
                   background: "linear-gradient(135deg, #1E3A8A, #2563EB)",
                   borderRadius: "12px",
                   textAlign: "center",
+                  pageBreakInside: "avoid",
+                  breakInside: "avoid",
                 }}
               >
                 <p
@@ -687,17 +737,20 @@ export const CandidatoPDFSimples = forwardRef<HTMLDivElement, CandidatoPDFSimple
                   </span>
                 </p>
               </div>
-            </div>
+            </>
           )}
 
           {/* Application Date - Centered */}
           <div
+            data-section="application-date"
             style={{
               textAlign: "center",
               padding: "18px",
               backgroundColor: "#F1F5F9",
               borderRadius: "10px",
               marginBottom: "28px",
+              pageBreakInside: "avoid",
+              breakInside: "avoid",
             }}
           >
             <p style={{ fontSize: "13px", color: "#64748B", margin: 0 }}>
@@ -714,10 +767,13 @@ export const CandidatoPDFSimples = forwardRef<HTMLDivElement, CandidatoPDFSimple
 
           {/* Footer - Centered */}
           <div
+            data-section="footer"
             style={{
               textAlign: "center",
               paddingTop: "24px",
               borderTop: "2px solid #E5E7EB",
+              pageBreakInside: "avoid",
+              breakInside: "avoid",
             }}
           >
             <p style={{ fontSize: "12px", color: "#6B7280", margin: 0, fontWeight: "600" }}>
