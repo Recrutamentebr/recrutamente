@@ -1,9 +1,7 @@
 import { MapPin, Award } from "lucide-react";
 import founderPhoto from "@/assets/founder-photo.jpeg";
-
 export const FounderSection = () => {
-  return (
-    <section id="quem-somos" className="py-20 bg-card">
+  return <section id="quem-somos" className="py-20 bg-card">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <span className="inline-block px-4 py-2 bg-accent/10 text-accent font-semibold rounded-full text-sm mb-4">
@@ -22,11 +20,7 @@ export const FounderSection = () => {
           <div className="flex justify-center">
             <div className="relative">
               <div className="w-72 sm:w-80 rounded-3xl overflow-hidden shadow-2xl bg-muted">
-                <img 
-                  src={founderPhoto} 
-                  alt="Fundador da Recrutamente" 
-                  className="w-full h-auto"
-                />
+                <img src={founderPhoto} alt="Fundador da Recrutamente" className="w-full h-auto" />
               </div>
               {/* Decorative elements */}
               <div className="absolute -top-4 -right-4 w-24 h-24 bg-accent/20 rounded-2xl -z-10"></div>
@@ -41,13 +35,12 @@ export const FounderSection = () => {
                 <Award className="text-accent" size={24} />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-foreground">Denys Lira</h3>
+                <h3 className="text-xl font-bold text-foreground">Fundador</h3>
                 <p className="text-muted-foreground text-sm">Bacharel em Direito</p>
               </div>
             </div>
 
-            <p className="text-foreground leading-relaxed">
-              Bacharel em Direito, com mais de <span className="font-semibold text-accent">15 anos de experiência profissional</span> nas áreas de jurídico consultivo, gestão de carteira de clientes, consultoria em gestão financeira estratégica, valuation, M&A (Fusões e Aquisições) e gestão de pessoas.
+            <p className="text-foreground leading-relaxed">Fundador, com mais de 15 anos de experiência profissional nas áreas de jurídico consultivo, gestão de carteira de clientes, consultoria em gestão financeira estratégica, valuation, M&A (Fusões e Aquisições) e gestão de pessoas.<span className="font-semibold text-accent">15 anos de experiência profissional</span> nas áreas de jurídico consultivo, gestão de carteira de clientes, consultoria em gestão financeira estratégica, valuation, M&A (Fusões e Aquisições) e gestão de pessoas.
             </p>
 
             <p className="text-foreground leading-relaxed">
@@ -69,18 +62,12 @@ export const FounderSection = () => {
             </div>
 
             <div className="flex flex-wrap gap-3 pt-4">
-              {["Jurídico Consultivo", "Gestão Financeira", "M&A", "Gestão de Pessoas", "Valuation"].map((skill) => (
-                <span
-                  key={skill}
-                  className="px-4 py-2 bg-secondary text-secondary-foreground text-sm font-medium rounded-full"
-                >
+              {["Jurídico Consultivo", "Gestão Financeira", "M&A", "Gestão de Pessoas", "Valuation"].map(skill => <span key={skill} className="px-4 py-2 bg-secondary text-secondary-foreground text-sm font-medium rounded-full">
                   {skill}
-                </span>
-              ))}
+                </span>)}
             </div>
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
