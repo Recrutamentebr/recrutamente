@@ -204,14 +204,47 @@ export const generateSimplePDF = async (
     const pdf = new jsPDF("p", "mm", "a4");
     const imgWidth = 210; // A4 width in mm
     const pageHeight = 297; // A4 height in mm
-    const margin = 0; // No margin since component has its own padding
-    const usableHeight = pageHeight - margin * 2;
+    const headerHeight = 25; // Space for logo header on each page
+    const footerHeight = 10; // Space for footer
+    const usableHeight = pageHeight - headerHeight - footerHeight;
 
     // Get all sections marked with data-section attribute
     const sections = reportElement.querySelectorAll('[data-section]');
-    
+    const containerWidth = reportElement.offsetWidth || 794;
+
+    // Function to add header with logo to each page
+    const addPageHeader = async (pageNum: number, totalPages: number) => {
+      // Add decorative top bar
+      pdf.setFillColor(30, 58, 138);
+      pdf.rect(0, 0, imgWidth, 3, 'F');
+      
+      // Add logo text (since we can't easily embed the image)
+      pdf.setFontSize(14);
+      pdf.setTextColor(30, 58, 138);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('RecrutaMente', 10, 15);
+      
+      // Add page number
+      pdf.setFontSize(9);
+      pdf.setTextColor(107, 114, 128);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Página ${pageNum} de ${totalPages}`, imgWidth - 10, 15, { align: 'right' });
+      
+      // Add separator line
+      pdf.setDrawColor(229, 231, 235);
+      pdf.setLineWidth(0.5);
+      pdf.line(10, 20, imgWidth - 10, 20);
+    };
+
+    // Function to add footer
+    const addPageFooter = () => {
+      pdf.setFontSize(8);
+      pdf.setTextColor(156, 163, 175);
+      pdf.text('Documento Confidencial • Uso Exclusivo para Processo Seletivo', imgWidth / 2, pageHeight - 5, { align: 'center' });
+    };
+
     if (sections.length === 0) {
-      // Fallback to old method if no sections found
+      // Fallback: render full element and split by pages
       const canvas = await html2canvas(reportElement, {
         scale: 2,
         useCORS: true,
@@ -221,51 +254,52 @@ export const generateSimplePDF = async (
       });
 
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
+      const totalPages = Math.ceil(imgHeight / usableHeight);
       
-      pdf.addImage(
-        canvas.toDataURL("image/jpeg", 0.95),
-        "JPEG",
-        0,
-        position,
-        imgWidth,
-        imgHeight
-      );
-      heightLeft -= pageHeight;
-      
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(
-          canvas.toDataURL("image/jpeg", 0.95),
-          "JPEG",
-          0,
-          position,
-          imgWidth,
-          imgHeight
-        );
-        heightLeft -= pageHeight;
+      for (let page = 0; page < totalPages; page++) {
+        if (page > 0) {
+          pdf.addPage();
+        }
+        
+        await addPageHeader(page + 1, totalPages);
+        
+        // Calculate source and destination positions
+        const srcY = page * (canvas.height / totalPages);
+        const srcHeight = canvas.height / totalPages;
+        
+        // Create a temporary canvas for this page portion
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = srcHeight;
+        const ctx = tempCanvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(canvas, 0, srcY, canvas.width, srcHeight, 0, 0, canvas.width, srcHeight);
+          
+          pdf.addImage(
+            tempCanvas.toDataURL("image/jpeg", 0.95),
+            "JPEG",
+            0,
+            headerHeight,
+            imgWidth,
+            usableHeight
+          );
+        }
+        
+        addPageFooter();
       }
     } else {
       // Smart section-based rendering
-      let currentY = margin;
-      let isFirstPage = true;
-
-      // Group sections into pages
       const sectionGroups: HTMLElement[][] = [[]];
       let currentPageHeight = 0;
-      const containerWidth = reportElement.offsetWidth;
-      const scale = imgWidth / containerWidth * 25.4 / 96 * 2; // Convert px to mm with scale factor
 
+      // Calculate heights and group sections
       for (let i = 0; i < sections.length; i++) {
         const section = sections[i] as HTMLElement;
         const sectionHeightPx = section.offsetHeight;
         const sectionHeightMm = (sectionHeightPx * imgWidth) / containerWidth;
 
-        // Check if section fits on current page
-        if (currentPageHeight + sectionHeightMm > usableHeight && sectionGroups[sectionGroups.length - 1].length > 0) {
-          // Start new page
+        // Check if section fits on current page (with some buffer)
+        if (currentPageHeight + sectionHeightMm > usableHeight - 5 && sectionGroups[sectionGroups.length - 1].length > 0) {
           sectionGroups.push([]);
           currentPageHeight = 0;
         }
@@ -274,11 +308,15 @@ export const generateSimplePDF = async (
         currentPageHeight += sectionHeightMm;
       }
 
+      const totalPages = sectionGroups.length;
+
       // Render each page
       for (let pageIndex = 0; pageIndex < sectionGroups.length; pageIndex++) {
         if (pageIndex > 0) {
           pdf.addPage();
         }
+
+        await addPageHeader(pageIndex + 1, totalPages);
 
         const pageGroup = sectionGroups[pageIndex];
         
@@ -289,13 +327,17 @@ export const generateSimplePDF = async (
         tempContainer.style.position = 'absolute';
         tempContainer.style.left = '-9999px';
         tempContainer.style.top = '0';
-        tempContainer.style.padding = '48px 56px';
+        tempContainer.style.padding = '20px 56px';
         tempContainer.style.fontFamily = "'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
+        tempContainer.style.boxSizing = 'border-box';
         document.body.appendChild(tempContainer);
 
         // Clone sections for this page
         for (const section of pageGroup) {
           const clonedSection = section.cloneNode(true) as HTMLElement;
+          // Remove page break styles from cloned elements since we handle it manually
+          clonedSection.style.pageBreakInside = 'auto';
+          clonedSection.style.breakInside = 'auto';
           tempContainer.appendChild(clonedSection);
         }
 
@@ -314,18 +356,21 @@ export const generateSimplePDF = async (
           canvas.toDataURL("image/jpeg", 0.95),
           "JPEG",
           0,
-          0,
+          headerHeight,
           imgWidth,
-          imgHeight
+          Math.min(imgHeight, usableHeight)
         );
 
         // Remove temporary container
         document.body.removeChild(tempContainer);
+        
+        addPageFooter();
       }
     }
 
-    // Add clickable link for resume if URL exists
+    // Add clickable link for resume if URL exists (on first page)
     if (resumeUrl) {
+      pdf.setPage(1);
       const linkX = 45;
       const linkY = 165;
       const linkWidth = 120;
@@ -362,37 +407,89 @@ export const generateBulkPDF = async (
 
     const imgWidth = 210; // A4 width in mm
     const pageHeight = 297; // A4 height in mm
+    const headerHeight = 20; // Space for logo header
+    const footerHeight = 8; // Space for footer
+    const usableHeight = pageHeight - headerHeight - footerHeight;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
     
     const pdf = new jsPDF("p", "mm", "a4");
+    const totalPages = Math.ceil(imgHeight / usableHeight);
+
+    // Function to add header with logo
+    const addPageHeader = (pageNum: number) => {
+      pdf.setFillColor(30, 58, 138);
+      pdf.rect(0, 0, imgWidth, 3, 'F');
+      
+      pdf.setFontSize(12);
+      pdf.setTextColor(30, 58, 138);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('RecrutaMente', 10, 12);
+      
+      pdf.setFontSize(9);
+      pdf.setTextColor(107, 114, 128);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Relatório de Candidatos • Página ${pageNum} de ${totalPages}`, imgWidth - 10, 12, { align: 'right' });
+      
+      pdf.setDrawColor(229, 231, 235);
+      pdf.setLineWidth(0.3);
+      pdf.line(10, 16, imgWidth - 10, 16);
+    };
+
+    // Function to add footer
+    const addPageFooter = () => {
+      pdf.setFontSize(7);
+      pdf.setTextColor(156, 163, 175);
+      pdf.text('Documento Confidencial • www.recrutamente.com.br', imgWidth / 2, pageHeight - 4, { align: 'center' });
+    };
     
     let heightLeft = imgHeight;
-    let position = 0;
+    let srcY = 0;
+    let pageNum = 1;
     
-    // Add first page
-    pdf.addImage(
-      canvas.toDataURL("image/jpeg", 0.95),
-      "JPEG",
-      0,
-      position,
-      imgWidth,
-      imgHeight
-    );
-    heightLeft -= pageHeight;
-    
-    // Add additional pages if needed
     while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(
-        canvas.toDataURL("image/jpeg", 0.95),
-        "JPEG",
-        0,
-        position,
-        imgWidth,
-        imgHeight
-      );
-      heightLeft -= pageHeight;
+      if (pageNum > 1) {
+        pdf.addPage();
+      }
+      
+      addPageHeader(pageNum);
+      
+      // Calculate how much of the source image to use for this page
+      const srcHeightRatio = Math.min(usableHeight / imgHeight, heightLeft / imgHeight);
+      const srcHeight = canvas.height * (usableHeight / imgHeight);
+      
+      // Create temporary canvas for this portion
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = Math.min(srcHeight, canvas.height - (srcY * canvas.height / imgHeight));
+      const ctx = tempCanvas.getContext('2d');
+      
+      if (ctx) {
+        const sourceY = srcY * canvas.height / imgHeight;
+        ctx.drawImage(
+          canvas, 
+          0, sourceY, 
+          canvas.width, tempCanvas.height, 
+          0, 0, 
+          canvas.width, tempCanvas.height
+        );
+        
+        const pageImgHeight = (tempCanvas.height * imgWidth) / canvas.width;
+        
+        pdf.addImage(
+          tempCanvas.toDataURL("image/jpeg", 0.95),
+          "JPEG",
+          0,
+          headerHeight,
+          imgWidth,
+          Math.min(pageImgHeight, usableHeight)
+        );
+      }
+      
+      addPageFooter();
+      
+      srcY += usableHeight;
+      heightLeft -= usableHeight;
+      pageNum++;
     }
 
     const filename = `candidatos_${candidateCount}_${new Date().toISOString().split("T")[0]}.pdf`;
