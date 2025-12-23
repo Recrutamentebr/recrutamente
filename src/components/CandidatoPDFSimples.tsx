@@ -1,5 +1,11 @@
 import { forwardRef } from "react";
 import logoRecrutamente from "@/assets/logo-recrutamente.png";
+import { ScoredQuestion, scoreLabels } from "@/types/customQuestions";
+
+interface CustomQuestionsData {
+  predefinedQuestions?: string[];
+  scoredQuestions?: ScoredQuestion[];
+}
 
 interface Application {
   id: string;
@@ -19,6 +25,7 @@ interface Application {
   resume_url: string | null;
   status: string;
   created_at: string;
+  custom_answers?: Record<string, string> | null;
 }
 
 interface Job {
@@ -28,6 +35,7 @@ interface Job {
   city: string;
   state: string;
   level: string;
+  custom_questions?: CustomQuestionsData | string[] | null;
 }
 
 interface CandidatoPDFSimplesProps {
@@ -60,6 +68,64 @@ export const CandidatoPDFSimples = forwardRef<HTMLDivElement, CandidatoPDFSimple
     });
 
     const statusStyle = statusColors[application.status] || statusColors.pending;
+
+    // Get scored questions from job
+    const getScoredQuestions = (): ScoredQuestion[] => {
+      if (!job.custom_questions) return [];
+      if (Array.isArray(job.custom_questions)) return [];
+      return job.custom_questions.scoredQuestions || [];
+    };
+
+    // Parse candidate answers and calculate scores
+    const getAnswerAnalysis = () => {
+      const scoredQuestions = getScoredQuestions();
+      const customAnswers = application.custom_answers || {};
+      
+      const analysis: Array<{
+        question: string;
+        answer: string;
+        score: number;
+        maxScore: number;
+        label: string;
+      }> = [];
+
+      for (const question of scoredQuestions) {
+        const answerKey = `scored_${question.id}`;
+        const answerValue = customAnswers[answerKey];
+        
+        if (answerValue) {
+          // Parse "text|score" format
+          const parts = answerValue.split('|');
+          const answerText = parts[0] || answerValue;
+          const score = parseInt(parts[1]) || 0;
+          
+          analysis.push({
+            question: question.question,
+            answer: answerText,
+            score: score,
+            maxScore: 4,
+            label: scoreLabels[score]?.label || 'N/A'
+          });
+        }
+      }
+
+      return analysis;
+    };
+
+    const answerAnalysis = getAnswerAnalysis();
+    const totalScore = answerAnalysis.reduce((sum, a) => sum + a.score, 0);
+    const maxTotalScore = answerAnalysis.length * 4;
+    const scorePercentage = maxTotalScore > 0 ? Math.round((totalScore / maxTotalScore) * 100) : 0;
+
+    const getScoreColor = (score: number) => {
+      switch (score) {
+        case 1: return { bg: '#FEE2E2', text: '#DC2626', border: '#FECACA' };
+        case 2: return { bg: '#FEF3C7', text: '#D97706', border: '#FDE68A' };
+        case 3: return { bg: '#DBEAFE', text: '#2563EB', border: '#BFDBFE' };
+        case 4: return { bg: '#D1FAE5', text: '#059669', border: '#A7F3D0' };
+        default: return { bg: '#F3F4F6', text: '#6B7280', border: '#E5E7EB' };
+      }
+    };
 
     return (
       <div
@@ -486,6 +552,141 @@ export const CandidatoPDFSimples = forwardRef<HTMLDivElement, CandidatoPDFSimple
                   </a>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Scored Questions Analysis - Only shown if there are answers */}
+          {answerAnalysis.length > 0 && (
+            <div style={{ marginBottom: "32px" }}>
+              <h3
+                style={{
+                  fontSize: "13px",
+                  fontWeight: "700",
+                  color: "#1E3A8A",
+                  margin: "0 0 20px 0",
+                  textTransform: "uppercase",
+                  letterSpacing: "1.5px",
+                  textAlign: "center",
+                }}
+              >
+                📊 Avaliação das Respostas
+              </h3>
+              
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {answerAnalysis.map((item, index) => {
+                  const color = getScoreColor(item.score);
+                  return (
+                    <div
+                      key={index}
+                      style={{
+                        padding: "16px 20px",
+                        backgroundColor: "#F8FAFC",
+                        borderRadius: "10px",
+                        border: "1px solid #E2E8F0",
+                      }}
+                    >
+                      <p
+                        style={{
+                          fontSize: "12px",
+                          color: "#64748B",
+                          margin: "0 0 8px 0",
+                          fontWeight: "600",
+                        }}
+                      >
+                        {item.question}
+                      </p>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          flexWrap: "wrap",
+                          gap: "8px",
+                        }}
+                      >
+                        <p
+                          style={{
+                            fontSize: "14px",
+                            color: "#1E293B",
+                            margin: 0,
+                            fontWeight: "500",
+                            flex: 1,
+                          }}
+                        >
+                          {item.answer}
+                        </p>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                          }}
+                        >
+                          <span
+                            style={{
+                              padding: "4px 12px",
+                              backgroundColor: color.bg,
+                              color: color.text,
+                              borderRadius: "16px",
+                              fontSize: "11px",
+                              fontWeight: "700",
+                              border: `1px solid ${color.border}`,
+                            }}
+                          >
+                            {item.label}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "12px",
+                              color: "#64748B",
+                              fontWeight: "600",
+                            }}
+                          >
+                            {item.score}/{item.maxScore}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Total Score */}
+              <div
+                style={{
+                  marginTop: "16px",
+                  padding: "20px",
+                  background: "linear-gradient(135deg, #1E3A8A, #2563EB)",
+                  borderRadius: "12px",
+                  textAlign: "center",
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: "11px",
+                    color: "rgba(255, 255, 255, 0.8)",
+                    margin: 0,
+                    textTransform: "uppercase",
+                    letterSpacing: "1px",
+                    fontWeight: "600",
+                  }}
+                >
+                  📈 Pontuação Total
+                </p>
+                <p
+                  style={{
+                    fontSize: "28px",
+                    fontWeight: "700",
+                    color: "#FFFFFF",
+                    margin: "8px 0 4px 0",
+                  }}
+                >
+                  {totalScore}/{maxTotalScore}{" "}
+                  <span style={{ fontSize: "16px", fontWeight: "500" }}>
+                    ({scorePercentage}%)
+                  </span>
+                </p>
+              </div>
             </div>
           )}
 

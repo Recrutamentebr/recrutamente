@@ -9,11 +9,15 @@ import {
   Trash2,
   Edit,
   Users,
-  Download
+  Download,
+  CheckSquare,
+  Square,
+  FileDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -36,6 +40,12 @@ import {
 } from "@/components/ui/dialog";
 import { CandidatoPDFSimples } from "./CandidatoPDFSimples";
 import { generateSimplePDF } from "@/utils/generateCandidatePDF";
+import { ScoredQuestion } from "@/types/customQuestions";
+
+interface CustomQuestionsData {
+  predefinedQuestions?: string[];
+  scoredQuestions?: ScoredQuestion[];
+}
 
 interface Application {
   id: string;
@@ -56,6 +66,7 @@ interface Application {
   status: string;
   created_at: string;
   job_id: string;
+  custom_answers: Record<string, string> | null;
   job?: {
     id: string;
     title: string;
@@ -63,6 +74,7 @@ interface Application {
     city: string;
     state: string;
     level: string;
+    custom_questions?: CustomQuestionsData | string[] | null;
   };
 }
 
@@ -73,6 +85,7 @@ interface Job {
   city: string;
   state: string;
   level: string;
+  custom_questions?: CustomQuestionsData | string[] | null;
 }
 
 interface TodasCandidaturasProps {
@@ -101,8 +114,12 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [generatingPDF, setGeneratingPDF] = useState<string | null>(null);
+  const [generatingBulkPDF, setGeneratingBulkPDF] = useState(false);
   const [pdfApplication, setPdfApplication] = useState<Application | null>(null);
   const pdfRef = useRef<HTMLDivElement>(null);
+  
+  // Selection state
+  const [selectedApplications, setSelectedApplications] = useState<Set<string>>(new Set());
   
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -117,19 +134,25 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
     try {
       const { data: jobsData, error: jobsError } = await supabase
         .from("jobs")
-        .select("id, title, area, city, state, level")
+        .select("id, title, area, city, state, level, custom_questions")
         .eq("company_id", companyId);
 
       if (jobsError) throw jobsError;
-      setJobs(jobsData || []);
+      
+      const jobsWithTypes = (jobsData || []).map(j => ({
+        ...j,
+        custom_questions: j.custom_questions as CustomQuestionsData | string[] | null
+      }));
+      
+      setJobs(jobsWithTypes);
 
-      if (!jobsData || jobsData.length === 0) {
+      if (!jobsWithTypes || jobsWithTypes.length === 0) {
         setApplications([]);
         setLoading(false);
         return;
       }
 
-      const jobIds = jobsData.map(j => j.id);
+      const jobIds = jobsWithTypes.map(j => j.id);
       const { data: appsData, error: appsError } = await supabase
         .from("applications")
         .select("*")
@@ -140,10 +163,11 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
 
       const appsWithJobs = (appsData || []).map(app => ({
         ...app,
-        job: jobsData.find(j => j.id === app.job_id),
+        custom_answers: app.custom_answers as Record<string, string> | null,
+        job: jobsWithTypes.find(j => j.id === app.job_id),
       }));
 
-      setApplications(appsWithJobs);
+      setApplications(appsWithJobs as Application[]);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast({
@@ -254,6 +278,84 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
     return matchesSearch && matchesJob && matchesStatus;
   });
 
+  // Selection handlers
+  const toggleSelectApplication = (appId: string) => {
+    setSelectedApplications(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(appId)) {
+        newSet.delete(appId);
+      } else {
+        newSet.add(appId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedApplications.size === filteredApplications.length) {
+      setSelectedApplications(new Set());
+    } else {
+      setSelectedApplications(new Set(filteredApplications.map(a => a.id)));
+    }
+  };
+
+  const handleDownloadSelectedPDFs = async () => {
+    const appsToDownload = filteredApplications.filter(a => selectedApplications.has(a.id));
+    if (appsToDownload.length === 0) {
+      toast({
+        title: "Nenhum candidato selecionado",
+        description: "Selecione ao menos um candidato para baixar o PDF.",
+        variant: "destructive",
+      });
+      return;
+    }
+    await downloadMultiplePDFs(appsToDownload);
+  };
+
+  const handleDownloadAllPDFs = async () => {
+    if (filteredApplications.length === 0) {
+      toast({
+        title: "Nenhum candidato",
+        description: "Não há candidatos para baixar.",
+        variant: "destructive",
+      });
+      return;
+    }
+    await downloadMultiplePDFs(filteredApplications);
+  };
+
+  const downloadMultiplePDFs = async (apps: Application[]) => {
+    setGeneratingBulkPDF(true);
+    
+    for (const app of apps) {
+      if (!app.job) continue;
+      
+      setPdfApplication(app);
+      
+      await new Promise<void>((resolve) => {
+        setTimeout(async () => {
+          try {
+            if (pdfRef.current) {
+              await generateSimplePDF(pdfRef.current, app.full_name, app.resume_url);
+            }
+          } catch (error) {
+            console.error("Error generating PDF for", app.full_name, error);
+          }
+          resolve();
+        }, 600);
+      });
+    }
+    
+    setPdfApplication(null);
+    setGeneratingBulkPDF(false);
+    setSelectedApplications(new Set());
+    
+    toast({
+      title: "PDFs gerados",
+      description: `${apps.length} PDF(s) baixado(s) com sucesso.`,
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-12">
@@ -264,16 +366,62 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-foreground">Todas as Candidaturas</h2>
-        <span className="text-muted-foreground text-sm">
-          {filteredApplications.length} candidatura{filteredApplications.length !== 1 ? "s" : ""}
-        </span>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-foreground">Todas as Candidaturas</h2>
+          <span className="text-muted-foreground text-sm">
+            {filteredApplications.length} candidatura{filteredApplications.length !== 1 ? "s" : ""}
+            {selectedApplications.size > 0 && ` (${selectedApplications.size} selecionada${selectedApplications.size !== 1 ? "s" : ""})`}
+          </span>
+        </div>
+        
+        {/* Bulk Download Buttons */}
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownloadSelectedPDFs}
+            disabled={selectedApplications.size === 0 || generatingBulkPDF}
+            className="bg-accent/10 border-accent/30 text-accent hover:bg-accent/20"
+          >
+            {generatingBulkPDF ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <FileDown size={16} />
+            )}
+            Baixar Selecionados ({selectedApplications.size})
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownloadAllPDFs}
+            disabled={filteredApplications.length === 0 || generatingBulkPDF}
+            className="bg-primary/10 border-primary/30 text-primary hover:bg-primary/20"
+          >
+            {generatingBulkPDF ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Download size={16} />
+            )}
+            Baixar Todos ({filteredApplications.length})
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
       <div className="bg-card rounded-xl p-4 border border-border">
-        <div className="grid sm:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-4 gap-4">
+          {/* Select All Checkbox */}
+          <div className="flex items-center gap-3">
+            <Checkbox
+              id="select-all"
+              checked={filteredApplications.length > 0 && selectedApplications.size === filteredApplications.length}
+              onCheckedChange={toggleSelectAll}
+            />
+            <label htmlFor="select-all" className="text-sm font-medium text-foreground cursor-pointer">
+              Selecionar Todos
+            </label>
+          </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
             <Input
@@ -314,38 +462,50 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
           {filteredApplications.map(app => (
             <div
               key={app.id}
-              className="bg-card rounded-xl p-5 border border-border shadow-sm hover:shadow-card transition-shadow"
+              className={`bg-card rounded-xl p-5 border shadow-sm hover:shadow-card transition-shadow ${
+                selectedApplications.has(app.id) 
+                  ? 'border-accent ring-2 ring-accent/20' 
+                  : 'border-border'
+              }`}
             >
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusColors[app.status]}`}>
-                      {statusLabels[app.status]}
-                    </span>
-                    {app.job && (
-                      <span className="px-3 py-1 bg-accent/10 text-accent text-xs font-semibold rounded-full">
-                        {app.job.title}
+                <div className="flex items-start gap-4 flex-1">
+                  {/* Checkbox */}
+                  <Checkbox
+                    checked={selectedApplications.has(app.id)}
+                    onCheckedChange={() => toggleSelectApplication(app.id)}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusColors[app.status]}`}>
+                        {statusLabels[app.status]}
                       </span>
-                    )}
+                      {app.job && (
+                        <span className="px-3 py-1 bg-accent/10 text-accent text-xs font-semibold rounded-full">
+                          {app.job.title}
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="font-bold text-foreground text-lg">{app.full_name}</h3>
+                    <div className="flex flex-wrap gap-4 mt-1 text-muted-foreground text-sm">
+                      <span className="flex items-center gap-1">
+                        <Mail size={14} />
+                        {app.email}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Phone size={14} />
+                        {app.phone}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MapPin size={14} />
+                        {app.city}, {app.state}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Candidatura em {new Date(app.created_at).toLocaleDateString("pt-BR")}
+                    </p>
                   </div>
-                  <h3 className="font-bold text-foreground text-lg">{app.full_name}</h3>
-                  <div className="flex flex-wrap gap-4 mt-1 text-muted-foreground text-sm">
-                    <span className="flex items-center gap-1">
-                      <Mail size={14} />
-                      {app.email}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Phone size={14} />
-                      {app.phone}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MapPin size={14} />
-                      {app.city}, {app.state}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Candidatura em {new Date(app.created_at).toLocaleDateString("pt-BR")}
-                  </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {/* Download PDF */}
