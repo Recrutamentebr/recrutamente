@@ -94,6 +94,7 @@ export type Database = {
           created_by: string
           id: string
           password_set: boolean
+          pending_job_ids: string[] | null
         }
         Insert: {
           client_email?: string | null
@@ -103,6 +104,7 @@ export type Database = {
           created_by: string
           id?: string
           password_set?: boolean
+          pending_job_ids?: string[] | null
         }
         Update: {
           client_email?: string | null
@@ -112,6 +114,7 @@ export type Database = {
           created_by?: string
           id?: string
           password_set?: boolean
+          pending_job_ids?: string[] | null
         }
         Relationships: [
           {
