@@ -194,4 +194,64 @@ export const generateCandidatePDF = async (
   }
 };
 
+// Simplified PDF generation for the candidate report
+export const generateSimplePDF = async (
+  reportElement: HTMLElement,
+  candidateName: string
+): Promise<void> => {
+  try {
+    const canvas = await html2canvas(reportElement, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: "#ffffff",
+      allowTaint: true,
+    });
+
+    const imgWidth = 210;
+    const pageHeight = 297;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    
+    const pdf = new jsPDF("p", "mm", "a4");
+    
+    let heightLeft = imgHeight;
+    let position = 0;
+    
+    pdf.addImage(
+      canvas.toDataURL("image/jpeg", 0.95),
+      "JPEG",
+      0,
+      position,
+      imgWidth,
+      imgHeight
+    );
+    heightLeft -= pageHeight;
+    
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(
+        canvas.toDataURL("image/jpeg", 0.95),
+        "JPEG",
+        0,
+        position,
+        imgWidth,
+        imgHeight
+      );
+      heightLeft -= pageHeight;
+    }
+
+    const sanitizedName = candidateName
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9]/g, "_");
+    const filename = `candidato_${sanitizedName}_${new Date().toISOString().split("T")[0]}.pdf`;
+
+    pdf.save(filename);
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    throw error;
+  }
+};
+
 export default generateCandidatePDF;
