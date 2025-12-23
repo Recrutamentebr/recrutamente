@@ -1,5 +1,4 @@
 import { forwardRef } from "react";
-import { Mail, Phone, MapPin, Briefcase, GraduationCap, Clock, DollarSign, ExternalLink, FileText, Linkedin, Globe } from "lucide-react";
 import logoRecrutamente from "@/assets/logo-recrutamente.png";
 
 interface Application {
@@ -45,475 +44,532 @@ const statusLabels: Record<string, string> = {
 };
 
 const statusColors: Record<string, { bg: string; text: string }> = {
-  pending: { bg: "#fef3c7", text: "#92400e" },
-  reviewing: { bg: "#dbeafe", text: "#1e40af" },
-  approved: { bg: "#dcfce7", text: "#166534" },
-  rejected: { bg: "#fee2e2", text: "#991b1b" },
-  hired: { bg: "#f3e8ff", text: "#7c3aed" },
+  pending: { bg: "#FEF3C7", text: "#92400E" },
+  reviewing: { bg: "#DBEAFE", text: "#1E40AF" },
+  approved: { bg: "#D1FAE5", text: "#065F46" },
+  rejected: { bg: "#FEE2E2", text: "#991B1B" },
+  hired: { bg: "#E9D5FF", text: "#6B21A8" },
 };
 
 export const CandidatoPDFSimples = forwardRef<HTMLDivElement, CandidatoPDFSimplesProps>(
   ({ application, job }, ref) => {
-    const statusStyle = statusColors[application.status] || statusColors.pending;
     const currentDate = new Date().toLocaleDateString("pt-BR", {
       day: "2-digit",
       month: "long",
       year: "numeric",
     });
 
+    const statusStyle = statusColors[application.status] || statusColors.pending;
+
     return (
       <div
         ref={ref}
         style={{
-          width: "210mm",
-          minHeight: "297mm",
-          padding: "20mm",
-          backgroundColor: "#ffffff",
-          fontFamily: "Inter, system-ui, sans-serif",
-          color: "#1f2937",
-          boxSizing: "border-box",
+          width: "794px",
+          minHeight: "1123px",
+          backgroundColor: "#FFFFFF",
+          fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+          color: "#1F2937",
+          position: "relative",
+          overflow: "hidden",
         }}
       >
-        {/* Header */}
+        {/* Decorative Top Bar */}
         <div
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "24px",
-            paddingBottom: "16px",
-            borderBottom: "3px solid #1e3a8a",
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "8px",
+            background: "linear-gradient(90deg, #1E3A8A, #3B82F6, #60A5FA)",
           }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <img
-              src={logoRecrutamente}
-              alt="RecrutaMente"
-              style={{ height: "48px", objectFit: "contain" }}
-              crossOrigin="anonymous"
-            />
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <h1
-              style={{
-                fontSize: "20px",
-                fontWeight: "700",
-                color: "#1e3a8a",
-                margin: 0,
-              }}
-            >
-              Relatório do Candidato
-            </h1>
-            <p style={{ fontSize: "12px", color: "#6b7280", margin: "4px 0 0 0" }}>
-              Gerado em {currentDate}
-            </p>
-          </div>
-        </div>
+        />
+        
+        {/* Decorative Background Circles */}
+        <div
+          style={{
+            position: "absolute",
+            top: "8px",
+            right: "-100px",
+            width: "300px",
+            height: "300px",
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(30, 58, 138, 0.03))",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            bottom: "100px",
+            left: "-150px",
+            width: "400px",
+            height: "400px",
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(30, 58, 138, 0.02))",
+          }}
+        />
 
-        {/* Candidate Info Section */}
-        <div
-          style={{
-            backgroundColor: "#eff6ff",
-            borderRadius: "12px",
-            padding: "20px",
-            marginBottom: "20px",
-            border: "1px solid #bfdbfe",
-          }}
-        >
+        {/* Content Container */}
+        <div style={{ padding: "48px 56px", position: "relative", zIndex: 1 }}>
+          {/* Header */}
           <div
             style={{
               display: "flex",
+              justifyContent: "space-between",
               alignItems: "center",
-              gap: "8px",
-              marginBottom: "16px",
+              marginBottom: "40px",
+              paddingBottom: "24px",
+              borderBottom: "2px solid #E5E7EB",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <img
+                src={logoRecrutamente}
+                alt="RecrutaMente"
+                style={{ height: "48px", objectFit: "contain" }}
+                crossOrigin="anonymous"
+              />
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <p
+                style={{
+                  fontSize: "12px",
+                  color: "#6B7280",
+                  margin: 0,
+                  letterSpacing: "1px",
+                  textTransform: "uppercase",
+                }}
+              >
+                Relatório do Candidato
+              </p>
+              <p
+                style={{
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  color: "#374151",
+                  margin: "4px 0 0 0",
+                }}
+              >
+                {currentDate}
+              </p>
+            </div>
+          </div>
+
+          {/* Candidate Name Section - Centered */}
+          <div
+            style={{
+              textAlign: "center",
+              marginBottom: "36px",
+              padding: "36px 32px",
+              background: "linear-gradient(135deg, #1E3A8A, #2563EB)",
+              borderRadius: "16px",
+              boxShadow: "0 10px 40px -10px rgba(30, 58, 138, 0.4)",
             }}
           >
             <div
               style={{
-                width: "32px",
-                height: "32px",
+                width: "64px",
+                height: "64px",
                 borderRadius: "50%",
-                backgroundColor: "#1e3a8a",
+                backgroundColor: "rgba(255, 255, 255, 0.2)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#ffffff",
-                fontSize: "14px",
+                margin: "0 auto 16px auto",
+                fontSize: "28px",
                 fontWeight: "700",
+                color: "#FFFFFF",
               }}
             >
               {application.full_name.charAt(0).toUpperCase()}
             </div>
-            <h2 style={{ fontSize: "22px", fontWeight: "700", color: "#1e3a8a", margin: 0 }}>
+            <h2
+              style={{
+                fontSize: "32px",
+                fontWeight: "700",
+                color: "#FFFFFF",
+                margin: 0,
+                letterSpacing: "-0.5px",
+              }}
+            >
               {application.full_name}
             </h2>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "12px",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <Mail size={16} color="#3b82f6" />
-              <span style={{ fontSize: "14px" }}>{application.email}</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <Phone size={16} color="#3b82f6" />
-              <span style={{ fontSize: "14px" }}>{application.phone}</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <MapPin size={16} color="#3b82f6" />
-              <span style={{ fontSize: "14px" }}>
-                {application.city}, {application.state}
-              </span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <Clock size={16} color="#3b82f6" />
-              <span style={{ fontSize: "14px" }}>
-                Candidatura: {new Date(application.created_at).toLocaleDateString("pt-BR")}
+            <div
+              style={{
+                display: "inline-block",
+                marginTop: "16px",
+                padding: "8px 24px",
+                backgroundColor: statusStyle.bg,
+                borderRadius: "24px",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  color: statusStyle.text,
+                }}
+              >
+                {statusLabels[application.status] || application.status}
               </span>
             </div>
           </div>
-        </div>
 
-        {/* Job Applied Section */}
-        <div
-          style={{
-            backgroundColor: "#dcfce7",
-            borderRadius: "12px",
-            padding: "20px",
-            marginBottom: "20px",
-            border: "1px solid #86efac",
-          }}
-        >
-          <h3
-            style={{
-              fontSize: "14px",
-              fontWeight: "600",
-              color: "#166534",
-              marginBottom: "12px",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
-            <Briefcase size={18} color="#166534" />
-            VAGA APLICADA
-          </h3>
-          <h4 style={{ fontSize: "18px", fontWeight: "700", color: "#166534", margin: "0 0 8px 0" }}>
-            {job.title}
-          </h4>
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-            <span
-              style={{
-                backgroundColor: "#bbf7d0",
-                color: "#166534",
-                padding: "4px 12px",
-                borderRadius: "16px",
-                fontSize: "12px",
-                fontWeight: "500",
-              }}
-            >
-              {job.area}
-            </span>
-            <span
-              style={{
-                backgroundColor: "#bbf7d0",
-                color: "#166534",
-                padding: "4px 12px",
-                borderRadius: "16px",
-                fontSize: "12px",
-                fontWeight: "500",
-              }}
-            >
-              {job.level}
-            </span>
-            <span
-              style={{
-                backgroundColor: "#bbf7d0",
-                color: "#166534",
-                padding: "4px 12px",
-                borderRadius: "16px",
-                fontSize: "12px",
-                fontWeight: "500",
-              }}
-            >
-              {job.city}, {job.state}
-            </span>
-          </div>
-          <div
-            style={{
-              marginTop: "12px",
-              display: "inline-block",
-              backgroundColor: statusStyle.bg,
-              color: statusStyle.text,
-              padding: "6px 16px",
-              borderRadius: "20px",
-              fontSize: "13px",
-              fontWeight: "600",
-            }}
-          >
-            Status: {statusLabels[application.status]}
-          </div>
-        </div>
-
-        {/* Professional Info Section */}
-        <div
-          style={{
-            backgroundColor: "#f8fafc",
-            borderRadius: "12px",
-            padding: "20px",
-            marginBottom: "20px",
-            border: "1px solid #e2e8f0",
-          }}
-        >
-          <h3
-            style={{
-              fontSize: "14px",
-              fontWeight: "600",
-              color: "#475569",
-              marginBottom: "16px",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
-            <GraduationCap size={18} color="#475569" />
-            INFORMAÇÕES PROFISSIONAIS
-          </h3>
+          {/* Contact Information - Centered Grid */}
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
+              gridTemplateColumns: "1fr 1fr 1fr",
               gap: "16px",
+              marginBottom: "32px",
             }}
           >
-            <div>
-              <p style={{ fontSize: "12px", color: "#94a3b8", margin: "0 0 4px 0" }}>Escolaridade</p>
-              <p style={{ fontSize: "14px", fontWeight: "500", margin: 0 }}>{application.education_level}</p>
+            <div
+              style={{
+                textAlign: "center",
+                padding: "24px 16px",
+                backgroundColor: "#F8FAFC",
+                borderRadius: "12px",
+                border: "1px solid #E2E8F0",
+              }}
+            >
+              <p style={{ fontSize: "11px", color: "#64748B", margin: 0, textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: "600" }}>
+                ✉️ E-mail
+              </p>
+              <p style={{ fontSize: "14px", fontWeight: "600", color: "#1E293B", margin: "8px 0 0 0", wordBreak: "break-all" }}>
+                {application.email}
+              </p>
             </div>
-            <div>
-              <p style={{ fontSize: "12px", color: "#94a3b8", margin: "0 0 4px 0" }}>Experiência</p>
-              <p style={{ fontSize: "14px", fontWeight: "500", margin: 0 }}>{application.experience}</p>
+            <div
+              style={{
+                textAlign: "center",
+                padding: "24px 16px",
+                backgroundColor: "#F8FAFC",
+                borderRadius: "12px",
+                border: "1px solid #E2E8F0",
+              }}
+            >
+              <p style={{ fontSize: "11px", color: "#64748B", margin: 0, textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: "600" }}>
+                📱 Telefone
+              </p>
+              <p style={{ fontSize: "14px", fontWeight: "600", color: "#1E293B", margin: "8px 0 0 0" }}>
+                {application.phone}
+              </p>
             </div>
-            {application.salary_expectation && (
-              <div>
-                <p style={{ fontSize: "12px", color: "#94a3b8", margin: "0 0 4px 0", display: "flex", alignItems: "center", gap: "4px" }}>
-                  <DollarSign size={12} />
-                  Pretensão Salarial
-                </p>
-                <p style={{ fontSize: "14px", fontWeight: "500", margin: 0 }}>{application.salary_expectation}</p>
-              </div>
-            )}
-            {application.availability && (
-              <div>
-                <p style={{ fontSize: "12px", color: "#94a3b8", margin: "0 0 4px 0" }}>Disponibilidade</p>
-                <p style={{ fontSize: "14px", fontWeight: "500", margin: 0 }}>{application.availability}</p>
-              </div>
-            )}
+            <div
+              style={{
+                textAlign: "center",
+                padding: "24px 16px",
+                backgroundColor: "#F8FAFC",
+                borderRadius: "12px",
+                border: "1px solid #E2E8F0",
+              }}
+            >
+              <p style={{ fontSize: "11px", color: "#64748B", margin: 0, textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: "600" }}>
+                📍 Localização
+              </p>
+              <p style={{ fontSize: "14px", fontWeight: "600", color: "#1E293B", margin: "8px 0 0 0" }}>
+                {application.city}, {application.state}
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* Resume Download Section */}
-        {application.resume_url && (
+          {/* Job Applied Section - Centered */}
           <div
             style={{
-              background: "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)",
+              textAlign: "center",
+              marginBottom: "32px",
+              padding: "28px",
+              background: "linear-gradient(135deg, #ECFDF5, #D1FAE5)",
               borderRadius: "12px",
-              padding: "20px",
-              marginBottom: "20px",
-              border: "2px solid #f59e0b",
+              border: "1px solid #A7F3D0",
             }}
           >
+            <p style={{ fontSize: "11px", color: "#047857", margin: 0, textTransform: "uppercase", letterSpacing: "1.5px", fontWeight: "700" }}>
+              💼 Vaga Aplicada
+            </p>
+            <h3 style={{ fontSize: "24px", fontWeight: "700", color: "#065F46", margin: "12px 0 0 0" }}>
+              {job.title}
+            </h3>
+            <p style={{ fontSize: "14px", color: "#047857", margin: "12px 0 0 0", fontWeight: "500" }}>
+              {job.area} • {job.level} • {job.city}, {job.state}
+            </p>
+          </div>
+
+          {/* Professional Information - Centered Grid */}
+          <div style={{ marginBottom: "32px" }}>
             <h3
               style={{
-                fontSize: "14px",
-                fontWeight: "600",
-                color: "#92400e",
-                marginBottom: "12px",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
+                fontSize: "13px",
+                fontWeight: "700",
+                color: "#1E3A8A",
+                margin: "0 0 20px 0",
+                textTransform: "uppercase",
+                letterSpacing: "1.5px",
+                textAlign: "center",
               }}
             >
-              <FileText size={18} color="#92400e" />
-              CURRÍCULO DO CANDIDATO
+              📋 Informações Profissionais
             </h3>
             <div
               style={{
-                backgroundColor: "#ffffff",
-                borderRadius: "8px",
-                padding: "16px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                border: "1px solid #fbbf24",
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "16px",
               }}
             >
-              <div>
-                <p style={{ fontSize: "14px", fontWeight: "600", color: "#92400e", margin: 0 }}>
-                  Clique para acessar o currículo
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "24px",
+                  backgroundColor: "#FEFCE8",
+                  borderRadius: "12px",
+                  border: "1px solid #FDE68A",
+                }}
+              >
+                <p style={{ fontSize: "11px", color: "#A16207", margin: 0, textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: "600" }}>
+                  🎓 Escolaridade
                 </p>
-                <p style={{ fontSize: "11px", color: "#b45309", margin: "4px 0 0 0", wordBreak: "break-all" }}>
-                  {application.resume_url}
+                <p style={{ fontSize: "16px", fontWeight: "600", color: "#78350F", margin: "10px 0 0 0" }}>
+                  {application.education_level}
                 </p>
               </div>
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "24px",
+                  backgroundColor: "#F0F9FF",
+                  borderRadius: "12px",
+                  border: "1px solid #BAE6FD",
+                }}
+              >
+                <p style={{ fontSize: "11px", color: "#0369A1", margin: 0, textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: "600" }}>
+                  💼 Experiência
+                </p>
+                <p style={{ fontSize: "16px", fontWeight: "600", color: "#0C4A6E", margin: "10px 0 0 0" }}>
+                  {application.experience}
+                </p>
+              </div>
+              {application.salary_expectation && (
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "24px",
+                    backgroundColor: "#FDF4FF",
+                    borderRadius: "12px",
+                    border: "1px solid #F5D0FE",
+                  }}
+                >
+                  <p style={{ fontSize: "11px", color: "#86198F", margin: 0, textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: "600" }}>
+                    💰 Pretensão Salarial
+                  </p>
+                  <p style={{ fontSize: "16px", fontWeight: "600", color: "#701A75", margin: "10px 0 0 0" }}>
+                    {application.salary_expectation}
+                  </p>
+                </div>
+              )}
+              {application.availability && (
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "24px",
+                    backgroundColor: "#F0FDF4",
+                    borderRadius: "12px",
+                    border: "1px solid #BBF7D0",
+                  }}
+                >
+                  <p style={{ fontSize: "11px", color: "#15803D", margin: 0, textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: "600" }}>
+                    ⏰ Disponibilidade
+                  </p>
+                  <p style={{ fontSize: "16px", fontWeight: "600", color: "#14532D", margin: "10px 0 0 0" }}>
+                    {application.availability}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Resume Download Section - Centered */}
+          {application.resume_url && (
+            <div
+              style={{
+                textAlign: "center",
+                marginBottom: "32px",
+                padding: "32px",
+                background: "linear-gradient(135deg, #FEF3C7, #FDE68A)",
+                borderRadius: "16px",
+                border: "2px solid #F59E0B",
+                boxShadow: "0 8px 24px -8px rgba(245, 158, 11, 0.3)",
+              }}
+            >
+              <p style={{ fontSize: "12px", color: "#92400E", margin: 0, textTransform: "uppercase", letterSpacing: "1.5px", fontWeight: "700" }}>
+                📎 Currículo do Candidato
+              </p>
               <a
                 href={application.resume_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
-                  backgroundColor: "#f59e0b",
-                  color: "#ffffff",
-                  padding: "10px 20px",
-                  borderRadius: "8px",
+                  display: "inline-block",
+                  marginTop: "16px",
+                  padding: "14px 40px",
+                  backgroundColor: "#F59E0B",
+                  color: "#FFFFFF",
+                  fontSize: "15px",
+                  fontWeight: "700",
                   textDecoration: "none",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
+                  borderRadius: "10px",
+                  boxShadow: "0 4px 16px rgba(245, 158, 11, 0.4)",
+                  letterSpacing: "0.5px",
                 }}
               >
-                <ExternalLink size={16} />
-                Baixar
+                ⬇️ BAIXAR CURRÍCULO
               </a>
+              <p style={{ fontSize: "11px", color: "#92400E", margin: "16px 0 0 0", wordBreak: "break-all", opacity: 0.8 }}>
+                {application.resume_url}
+              </p>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Expectations Section */}
-        {application.expectations && (
-          <div
-            style={{
-              backgroundColor: "#f8fafc",
-              borderRadius: "12px",
-              padding: "20px",
-              marginBottom: "20px",
-              border: "1px solid #e2e8f0",
-            }}
-          >
-            <h3
+          {/* Additional Information - Centered */}
+          {(application.expectations || application.additional_info) && (
+            <div style={{ marginBottom: "32px" }}>
+              {application.expectations && (
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "28px",
+                    backgroundColor: "#F8FAFC",
+                    borderRadius: "12px",
+                    border: "1px solid #E2E8F0",
+                    marginBottom: "16px",
+                  }}
+                >
+                  <p style={{ fontSize: "11px", color: "#64748B", margin: 0, textTransform: "uppercase", letterSpacing: "1.5px", fontWeight: "700" }}>
+                    🎯 Expectativas
+                  </p>
+                  <p style={{ fontSize: "14px", color: "#334155", margin: "14px 0 0 0", lineHeight: "1.7" }}>
+                    {application.expectations}
+                  </p>
+                </div>
+              )}
+              {application.additional_info && (
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "28px",
+                    backgroundColor: "#F8FAFC",
+                    borderRadius: "12px",
+                    border: "1px solid #E2E8F0",
+                  }}
+                >
+                  <p style={{ fontSize: "11px", color: "#64748B", margin: 0, textTransform: "uppercase", letterSpacing: "1.5px", fontWeight: "700" }}>
+                    📝 Informações Adicionais
+                  </p>
+                  <p style={{ fontSize: "14px", color: "#334155", margin: "14px 0 0 0", lineHeight: "1.7" }}>
+                    {application.additional_info}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Links Section - Centered */}
+          {(application.linkedin_url || application.portfolio_url) && (
+            <div
               style={{
-                fontSize: "14px",
-                fontWeight: "600",
-                color: "#475569",
-                marginBottom: "12px",
+                display: "grid",
+                gridTemplateColumns: application.linkedin_url && application.portfolio_url ? "1fr 1fr" : "1fr",
+                gap: "16px",
+                marginBottom: "32px",
               }}
             >
-              EXPECTATIVAS
-            </h3>
-            <p style={{ fontSize: "14px", lineHeight: "1.6", margin: 0, color: "#334155" }}>
-              {application.expectations}
-            </p>
-          </div>
-        )}
-
-        {/* Additional Info Section */}
-        {application.additional_info && (
-          <div
-            style={{
-              backgroundColor: "#f8fafc",
-              borderRadius: "12px",
-              padding: "20px",
-              marginBottom: "20px",
-              border: "1px solid #e2e8f0",
-            }}
-          >
-            <h3
-              style={{
-                fontSize: "14px",
-                fontWeight: "600",
-                color: "#475569",
-                marginBottom: "12px",
-              }}
-            >
-              INFORMAÇÕES ADICIONAIS
-            </h3>
-            <p style={{ fontSize: "14px", lineHeight: "1.6", margin: 0, color: "#334155" }}>
-              {application.additional_info}
-            </p>
-          </div>
-        )}
-
-        {/* Links Section */}
-        {(application.linkedin_url || application.portfolio_url) && (
-          <div
-            style={{
-              backgroundColor: "#f8fafc",
-              borderRadius: "12px",
-              padding: "20px",
-              marginBottom: "20px",
-              border: "1px solid #e2e8f0",
-            }}
-          >
-            <h3
-              style={{
-                fontSize: "14px",
-                fontWeight: "600",
-                color: "#475569",
-                marginBottom: "12px",
-              }}
-            >
-              LINKS PROFISSIONAIS
-            </h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {application.linkedin_url && (
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <Linkedin size={16} color="#0077b5" />
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "24px",
+                    backgroundColor: "#EFF6FF",
+                    borderRadius: "12px",
+                    border: "1px solid #BFDBFE",
+                  }}
+                >
+                  <p style={{ fontSize: "11px", color: "#1D4ED8", margin: 0, textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: "700" }}>
+                    💼 LinkedIn
+                  </p>
                   <a
                     href={application.linkedin_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: "#0077b5", fontSize: "13px", wordBreak: "break-all" }}
+                    style={{ fontSize: "12px", color: "#2563EB", margin: "10px 0 0 0", display: "block", wordBreak: "break-all", textDecoration: "none" }}
                   >
                     {application.linkedin_url}
                   </a>
                 </div>
               )}
               {application.portfolio_url && (
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <Globe size={16} color="#6366f1" />
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "24px",
+                    backgroundColor: "#ECFDF5",
+                    borderRadius: "12px",
+                    border: "1px solid #A7F3D0",
+                  }}
+                >
+                  <p style={{ fontSize: "11px", color: "#047857", margin: 0, textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: "700" }}>
+                    🌐 Portfólio
+                  </p>
                   <a
                     href={application.portfolio_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: "#6366f1", fontSize: "13px", wordBreak: "break-all" }}
+                    style={{ fontSize: "12px", color: "#059669", margin: "10px 0 0 0", display: "block", wordBreak: "break-all", textDecoration: "none" }}
                   >
                     {application.portfolio_url}
                   </a>
                 </div>
               )}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Footer */}
-        <div
-          style={{
-            marginTop: "auto",
-            paddingTop: "20px",
-            borderTop: "2px solid #e2e8f0",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <img
-              src={logoRecrutamente}
-              alt="RecrutaMente"
-              style={{ height: "24px", objectFit: "contain" }}
-              crossOrigin="anonymous"
-            />
-            <span style={{ fontSize: "12px", color: "#6b7280" }}>RecrutaMente</span>
+          {/* Application Date - Centered */}
+          <div
+            style={{
+              textAlign: "center",
+              padding: "18px",
+              backgroundColor: "#F1F5F9",
+              borderRadius: "10px",
+              marginBottom: "28px",
+            }}
+          >
+            <p style={{ fontSize: "13px", color: "#64748B", margin: 0 }}>
+              Candidatura realizada em{" "}
+              <strong style={{ color: "#334155" }}>
+                {new Date(application.created_at).toLocaleDateString("pt-BR", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </strong>
+            </p>
           </div>
-          <p style={{ fontSize: "11px", color: "#9ca3af", margin: 0 }}>
-            Documento confidencial • Gerado automaticamente
-          </p>
+
+          {/* Footer - Centered */}
+          <div
+            style={{
+              textAlign: "center",
+              paddingTop: "24px",
+              borderTop: "2px solid #E5E7EB",
+            }}
+          >
+            <p style={{ fontSize: "12px", color: "#6B7280", margin: 0, fontWeight: "600" }}>
+              RecrutaMente
+            </p>
+            <p style={{ fontSize: "11px", color: "#9CA3AF", margin: "6px 0 0 0" }}>
+              Documento Confidencial • Uso Exclusivo para Processo Seletivo
+            </p>
+            <p style={{ fontSize: "10px", color: "#D1D5DB", margin: "8px 0 0 0" }}>
+              www.recrutamente.com.br
+            </p>
+          </div>
         </div>
       </div>
     );
