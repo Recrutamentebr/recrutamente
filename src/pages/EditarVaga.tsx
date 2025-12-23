@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ChevronLeft, Loader2 } from "lucide-react";
+import { ChevronLeft, Loader2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
@@ -73,6 +75,8 @@ const EditarVagaPage = () => {
     level: "",
     salary_range: "",
     is_active: true,
+    form_type: "internal",
+    external_form_url: "",
   });
 
   useEffect(() => {
@@ -113,6 +117,8 @@ const EditarVagaPage = () => {
         level: data.level,
         salary_range: data.salary_range || "",
         is_active: data.is_active,
+        form_type: data.external_form_url ? "external" : "internal",
+        external_form_url: data.external_form_url || "",
       });
     } catch (error) {
       console.error("Error fetching job:", error);
@@ -162,6 +168,7 @@ const EditarVagaPage = () => {
           level: formData.level,
           salary_range: formData.salary_range || null,
           is_active: formData.is_active,
+          external_form_url: formData.form_type === "external" ? formData.external_form_url : null,
         })
         .eq("id", id);
 
@@ -410,6 +417,55 @@ const EditarVagaPage = () => {
                         />
                       </div>
                     </div>
+                  </div>
+
+                  {/* Form Type */}
+                  <div>
+                    <h2 className="font-bold text-xl text-foreground mb-6 pb-4 border-b border-border">
+                      Formulário de Candidatura
+                    </h2>
+                    <RadioGroup
+                      value={formData.form_type}
+                      onValueChange={(v) => handleChange("form_type", v)}
+                      className="space-y-4"
+                    >
+                      <div className="flex items-center space-x-3 p-4 rounded-xl border border-border hover:border-accent/50 transition-colors">
+                        <RadioGroupItem value="internal" id="internal" />
+                        <Label htmlFor="internal" className="flex-1 cursor-pointer">
+                          <span className="font-medium text-foreground">Formulário do Site</span>
+                          <p className="text-sm text-muted-foreground">
+                            Candidatos preenchem o formulário diretamente no site
+                          </p>
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-3 p-4 rounded-xl border border-border hover:border-accent/50 transition-colors">
+                        <RadioGroupItem value="external" id="external" />
+                        <Label htmlFor="external" className="flex-1 cursor-pointer">
+                          <span className="font-medium text-foreground flex items-center gap-2">
+                            Formulário Externo
+                            <ExternalLink size={14} />
+                          </span>
+                          <p className="text-sm text-muted-foreground">
+                            Redirecionar candidatos para um link externo (Google Forms, Typeform, etc.)
+                          </p>
+                        </Label>
+                      </div>
+                    </RadioGroup>
+
+                    {formData.form_type === "external" && (
+                      <div className="mt-4 space-y-2">
+                        <label className="text-sm font-medium text-foreground">
+                          Link do Formulário Externo *
+                        </label>
+                        <Input
+                          value={formData.external_form_url}
+                          onChange={(e) => handleChange("external_form_url", e.target.value)}
+                          placeholder="https://forms.google.com/..."
+                          className="h-12 bg-background"
+                          type="url"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Submit */}
