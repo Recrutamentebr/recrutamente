@@ -22,6 +22,7 @@ interface CustomQuestionsData {
 
 interface Job {
   id: string;
+  slug: string;
   title: string;
   city: string;
   state: string;
@@ -47,7 +48,7 @@ const disponibilidade = [
 ];
 
 const CandidaturaPage = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const { toast } = useToast();
 
   const [job, setJob] = useState<Job | null>(null);
@@ -62,12 +63,12 @@ const CandidaturaPage = () => {
 
   useEffect(() => {
     fetchJobs();
-  }, [id]);
+  }, [slug]);
 
   const fetchJobs = async () => {
     const { data } = await supabase
       .from("jobs")
-      .select("id, title, city, state, custom_questions")
+      .select("id, slug, title, city, state, custom_questions")
       .eq("is_active", true);
     
     const jobsData = (data || []).map(j => ({
@@ -76,8 +77,8 @@ const CandidaturaPage = () => {
     }));
     
     setJobs(jobsData);
-    if (id && data) {
-      const found = jobsData.find((j) => j.id === id);
+    if (slug && data) {
+      const found = jobsData.find((j) => j.slug === slug);
       setJob(found || null);
       if (found) setSelectedJobId(found.id);
     }
@@ -272,7 +273,7 @@ const CandidaturaPage = () => {
         <section className="bg-hero-gradient py-12">
           <div className="container mx-auto px-4">
             <Link
-              to={job ? `/vagas/${job.id}` : "/vagas"}
+              to={job ? `/vagas/${job.slug}` : "/vagas"}
               className="inline-flex items-center gap-2 text-primary-foreground/80 hover:text-primary-foreground mb-6 transition-colors"
             >
               <ChevronLeft size={18} />

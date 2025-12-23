@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface Job {
   id: string;
+  slug: string;
   title: string;
   description: string;
   area: string;
@@ -50,7 +51,7 @@ const JobCard = forwardRef<HTMLDivElement, JobCardProps>(({ job }, ref) => {
           <p className="text-muted-foreground text-sm mt-3 line-clamp-2">{job.description}</p>
         </div>
         <Button variant="outline" size="sm" asChild className="flex-shrink-0">
-          <Link to={`/vagas/${job.id}`}>
+          <Link to={`/vagas/${job.slug}`}>
             Ver Vaga
             <ChevronRight size={16} />
           </Link>
@@ -79,7 +80,7 @@ export function TalentBankSection() {
     try {
       const { data, error } = await supabase
         .from("jobs")
-        .select("id, title, description, area, city, state, type, level")
+        .select("id, slug, title, description, area, city, state, type, level")
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 

@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface Job {
   id: string;
+  slug: string;
   title: string;
   description: string;
   requirements: string | null;
@@ -25,23 +26,23 @@ interface Job {
 }
 
 const VagaDetalhes = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchJob();
-  }, [id]);
+  }, [slug]);
 
   const fetchJob = async () => {
-    if (!id) return;
+    if (!slug) return;
 
     try {
       const { data, error } = await supabase
         .from("jobs")
         .select("*")
-        .eq("id", id)
+        .eq("slug", slug)
         .eq("is_active", true)
         .maybeSingle();
 
@@ -209,7 +210,7 @@ const VagaDetalhes = () => {
                       </a>
                     </Button>
                   ) : (
-                    <Button size="lg" className="w-full mb-4" onClick={() => navigate(`/candidatura/${job.id}`)}>
+                    <Button size="lg" className="w-full mb-4" onClick={() => navigate(`/candidatura/${job.slug}`)}>
                       Candidatar-se
                     </Button>
                   )}
