@@ -21,6 +21,7 @@ interface Job {
   level: string;
   salary_range: string | null;
   created_at: string;
+  external_form_url: string | null;
 }
 
 const VagaDetalhes = () => {
@@ -201,12 +202,20 @@ const VagaDetalhes = () => {
                   <p className="text-muted-foreground text-sm mb-6">
                     Candidate-se agora e faça parte do nosso banco de talentos. Nossa equipe entrará em contato com você.
                   </p>
-                  <Button size="lg" className="w-full mb-4" onClick={() => navigate(`/candidatura/${job.id}`)}>
-                    Candidatar-se
-                  </Button>
+                  {job.external_form_url ? (
+                    <Button size="lg" className="w-full mb-4" asChild>
+                      <a href={job.external_form_url} target="_blank" rel="noopener noreferrer">
+                        Candidatar-se
+                      </a>
+                    </Button>
+                  ) : (
+                    <Button size="lg" className="w-full mb-4" onClick={() => navigate(`/candidatura/${job.id}`)}>
+                      Candidatar-se
+                    </Button>
+                  )}
                   <Button variant="outline" size="lg" className="w-full" asChild>
                     <a
-                      href={`https://wa.me/5581981985374?text=Olá! Tenho interesse na vaga de ${job.title}`}
+                      href={`https://wa.me/5581981985374?text=Olá! Tenho interesse na vaga de ${encodeURIComponent(job.title)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >

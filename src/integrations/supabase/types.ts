@@ -135,6 +135,7 @@ export type Database = {
           company_id: string
           created_at: string
           description: string
+          external_form_url: string | null
           id: string
           is_active: boolean
           level: string
@@ -153,6 +154,7 @@ export type Database = {
           company_id: string
           created_at?: string
           description: string
+          external_form_url?: string | null
           id?: string
           is_active?: boolean
           level?: string
@@ -171,6 +173,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           description?: string
+          external_form_url?: string | null
           id?: string
           is_active?: boolean
           level?: string
