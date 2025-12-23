@@ -689,7 +689,7 @@ export const CandidatoPDFSimples = forwardRef<HTMLDivElement, CandidatoPDFSimple
                             fontWeight: "600",
                           }}
                         >
-                          {item.score}/{item.maxScore}
+                          {Math.round((item.score / item.maxScore) * 100)}%
                         </span>
                       </div>
                     </div>
@@ -721,20 +721,17 @@ export const CandidatoPDFSimples = forwardRef<HTMLDivElement, CandidatoPDFSimple
                     fontWeight: "600",
                   }}
                 >
-                  📈 Pontuação Total
+                  📈 Aderência Total
                 </p>
                 <p
                   style={{
-                    fontSize: "28px",
+                    fontSize: "32px",
                     fontWeight: "700",
                     color: "#FFFFFF",
                     margin: "8px 0 4px 0",
                   }}
                 >
-                  {totalScore}/{maxTotalScore}{" "}
-                  <span style={{ fontSize: "16px", fontWeight: "500" }}>
-                    ({scorePercentage}%)
-                  </span>
+                  {scorePercentage}%
                 </p>
               </div>
             </>

@@ -275,7 +275,7 @@ const CandidateCard = ({ application, job }: { application: Application; job?: J
                   }}
                 >
                   <span style={{ fontSize: "9px", color: color.text, fontWeight: "600" }}>
-                    {item.label} ({item.score}/4)
+                    {item.label} ({Math.round((item.score / 4) * 100)}%)
                   </span>
                 </div>
               );
@@ -291,7 +291,7 @@ const CandidateCard = ({ application, job }: { application: Application; job?: J
             }}
           >
             <span style={{ fontSize: "10px", color: "#FFFFFF", fontWeight: "700" }}>
-              📈 Pontuação: {totalScore}/{maxTotalScore} ({scorePercentage}%)
+              📈 Aderência: {scorePercentage}%
             </span>
           </div>
         </div>
