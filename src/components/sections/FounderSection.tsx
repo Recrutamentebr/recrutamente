@@ -1,4 +1,5 @@
-import { User, Briefcase, MapPin, Award } from "lucide-react";
+import { MapPin, Award } from "lucide-react";
+import founderPhoto from "@/assets/founder-photo.jpeg";
 
 export const FounderSection = () => {
   return (
@@ -17,11 +18,15 @@ export const FounderSection = () => {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
-          {/* Left side - Image/Icon area */}
+          {/* Left side - Photo */}
           <div className="flex justify-center">
             <div className="relative">
-              <div className="w-72 h-72 sm:w-80 sm:h-80 bg-gradient-to-br from-primary to-accent rounded-3xl flex items-center justify-center shadow-2xl">
-                <User className="text-primary-foreground" size={120} />
+              <div className="w-72 h-72 sm:w-80 sm:h-80 rounded-3xl overflow-hidden shadow-2xl">
+                <img 
+                  src={founderPhoto} 
+                  alt="Fundador da Recrutamente" 
+                  className="w-full h-full object-cover object-top"
+                />
               </div>
               {/* Decorative elements */}
               <div className="absolute -top-4 -right-4 w-24 h-24 bg-accent/20 rounded-2xl -z-10"></div>
