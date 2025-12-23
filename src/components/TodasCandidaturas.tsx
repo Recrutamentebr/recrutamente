@@ -39,7 +39,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { CandidatoPDFSimples } from "./CandidatoPDFSimples";
-import { generateSimplePDF } from "@/utils/generateCandidatePDF";
+import { CandidatoPDFCompacto } from "./CandidatoPDFCompacto";
+import { generateSimplePDF, generateBulkPDF } from "@/utils/generateCandidatePDF";
 import { ScoredQuestion } from "@/types/customQuestions";
 
 interface CustomQuestionsData {
@@ -116,7 +117,9 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
   const [generatingPDF, setGeneratingPDF] = useState<string | null>(null);
   const [generatingBulkPDF, setGeneratingBulkPDF] = useState(false);
   const [pdfApplication, setPdfApplication] = useState<Application | null>(null);
+  const [bulkPdfApplications, setBulkPdfApplications] = useState<Application[]>([]);
   const pdfRef = useRef<HTMLDivElement>(null);
+  const bulkPdfRef = useRef<HTMLDivElement>(null);
   
   // Selection state
   const [selectedApplications, setSelectedApplications] = useState<Set<string>>(new Set());
@@ -325,35 +328,46 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
   };
 
   const downloadMultiplePDFs = async (apps: Application[]) => {
-    setGeneratingBulkPDF(true);
-    
-    for (const app of apps) {
-      if (!app.job) continue;
-      
-      setPdfApplication(app);
-      
-      await new Promise<void>((resolve) => {
-        setTimeout(async () => {
-          try {
-            if (pdfRef.current) {
-              await generateSimplePDF(pdfRef.current, app.full_name, app.resume_url);
-            }
-          } catch (error) {
-            console.error("Error generating PDF for", app.full_name, error);
-          }
-          resolve();
-        }, 600);
+    const validApps = apps.filter(a => a.job);
+    if (validApps.length === 0) {
+      toast({
+        title: "Erro",
+        description: "Nenhum candidato com dados de vaga válidos.",
+        variant: "destructive",
       });
+      return;
     }
-    
-    setPdfApplication(null);
-    setGeneratingBulkPDF(false);
-    setSelectedApplications(new Set());
-    
-    toast({
-      title: "PDFs gerados",
-      description: `${apps.length} PDF(s) baixado(s) com sucesso.`,
-    });
+
+    setGeneratingBulkPDF(true);
+    setBulkPdfApplications(validApps);
+
+    // Wait for the component to render
+    setTimeout(async () => {
+      try {
+        if (bulkPdfRef.current) {
+          await generateBulkPDF(bulkPdfRef.current, validApps.length);
+          toast({
+            title: "PDF gerado",
+            description: `Relatório com ${validApps.length} candidato(s) baixado com sucesso.`,
+          });
+        }
+      } catch (error) {
+        console.error("Error generating bulk PDF:", error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível gerar o PDF.",
+          variant: "destructive",
+        });
+      } finally {
+        setGeneratingBulkPDF(false);
+        setBulkPdfApplications([]);
+        setSelectedApplications(new Set());
+      }
+    }, 500);
+  };
+
+  const getJobForApplication = (app: Application) => {
+    return jobs.find(j => j.id === app.job_id);
   };
 
   if (loading) {
@@ -668,7 +682,7 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
         </div>
       )}
 
-      {/* Hidden PDF Component for Generation */}
+      {/* Hidden PDF Component for Single Generation */}
       {pdfApplication && pdfApplication.job && (
         <div
           style={{
@@ -681,6 +695,23 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
             ref={pdfRef}
             application={pdfApplication}
             job={pdfApplication.job}
+          />
+        </div>
+      )}
+
+      {/* Hidden PDF Component for Bulk Generation */}
+      {bulkPdfApplications.length > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            left: "-9999px",
+            top: "-9999px",
+          }}
+        >
+          <CandidatoPDFCompacto
+            ref={bulkPdfRef}
+            applications={bulkPdfApplications}
+            getJobForApplication={getJobForApplication}
           />
         </div>
       )}

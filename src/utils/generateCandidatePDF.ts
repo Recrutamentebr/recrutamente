@@ -271,4 +271,62 @@ export const generateSimplePDF = async (
   }
 };
 
+// Bulk PDF generation - creates a single PDF with multiple candidates (2 per page)
+export const generateBulkPDF = async (
+  reportElement: HTMLElement,
+  candidateCount: number
+): Promise<void> => {
+  try {
+    const canvas = await html2canvas(reportElement, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: "#ffffff",
+      allowTaint: true,
+    });
+
+    const imgWidth = 210; // A4 width in mm
+    const pageHeight = 297; // A4 height in mm
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    
+    const pdf = new jsPDF("p", "mm", "a4");
+    
+    let heightLeft = imgHeight;
+    let position = 0;
+    
+    // Add first page
+    pdf.addImage(
+      canvas.toDataURL("image/jpeg", 0.95),
+      "JPEG",
+      0,
+      position,
+      imgWidth,
+      imgHeight
+    );
+    heightLeft -= pageHeight;
+    
+    // Add additional pages if needed
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(
+        canvas.toDataURL("image/jpeg", 0.95),
+        "JPEG",
+        0,
+        position,
+        imgWidth,
+        imgHeight
+      );
+      heightLeft -= pageHeight;
+    }
+
+    const filename = `candidatos_${candidateCount}_${new Date().toISOString().split("T")[0]}.pdf`;
+
+    pdf.save(filename);
+  } catch (error) {
+    console.error("Error generating bulk PDF:", error);
+    throw error;
+  }
+};
+
 export default generateCandidatePDF;
