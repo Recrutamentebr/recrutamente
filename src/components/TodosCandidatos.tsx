@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Download, Loader2, Search, Users, Eye, Mail, Phone } from "lucide-react";
+import { Download, Loader2, Search, Users, Eye, Mail, Phone, FileText, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
 
 interface Application {
   id: string;
@@ -150,41 +150,189 @@ const TodosCandidatos = ({ companyId }: TodosCandidatosProps) => {
     return matchesSearch && matchesStatus && matchesJob;
   });
 
-  const exportToExcel = () => {
-    const data = filteredApplications.map((app) => ({
-      "Nome Completo": app.full_name,
-      "Email": app.email,
-      "Telefone": app.phone,
-      "Cidade": app.city,
-      "Estado": app.state,
-      "Escolaridade": app.education_level,
-      "Experiência": app.experience,
-      "Pretensão Salarial": app.salary_expectation || "",
-      "Disponibilidade": app.availability || "",
-      "Expectativas": app.expectations || "",
-      "LinkedIn": app.linkedin_url || "",
-      "Portfólio": app.portfolio_url || "",
-      "Informações Adicionais": app.additional_info || "",
-      "Vaga": app.job_title,
-      "Status": statusLabels[app.status] || app.status,
-      "Data de Candidatura": new Date(app.created_at).toLocaleDateString("pt-BR"),
-    }));
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    const lineHeight = 7;
 
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    
-    // Auto-size columns
-    const colWidths = Object.keys(data[0] || {}).map((key) => ({
-      wch: Math.max(key.length, 20),
-    }));
-    worksheet["!cols"] = colWidths;
+    filteredApplications.forEach((app, index) => {
+      if (index > 0) doc.addPage();
 
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Candidatos");
-    XLSX.writeFile(workbook, `candidatos_${new Date().toISOString().split("T")[0]}.xlsx`);
+      let y = margin;
+
+      // Header
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.text(app.full_name, margin, y);
+      y += 10;
+
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(100);
+      doc.text(`Vaga: ${app.job_title}`, margin, y);
+      y += lineHeight;
+      doc.text(`Status: ${statusLabels[app.status] || app.status}`, margin, y);
+      y += lineHeight * 2;
+
+      // Separator
+      doc.setDrawColor(200);
+      doc.line(margin, y, pageWidth - margin, y);
+      y += lineHeight;
+
+      // Contact info
+      doc.setTextColor(0);
+      doc.setFont("helvetica", "bold");
+      doc.text("Contato", margin, y);
+      y += lineHeight;
+      doc.setFont("helvetica", "normal");
+      doc.text(`Email: ${app.email}`, margin, y);
+      y += lineHeight;
+      doc.text(`Telefone: ${app.phone}`, margin, y);
+      y += lineHeight;
+      doc.text(`Localização: ${app.city}, ${app.state}`, margin, y);
+      y += lineHeight * 2;
+
+      // Education
+      doc.setFont("helvetica", "bold");
+      doc.text("Formação", margin, y);
+      y += lineHeight;
+      doc.setFont("helvetica", "normal");
+      doc.text(`Escolaridade: ${app.education_level}`, margin, y);
+      y += lineHeight * 2;
+
+      // Experience
+      doc.setFont("helvetica", "bold");
+      doc.text("Experiência", margin, y);
+      y += lineHeight;
+      doc.setFont("helvetica", "normal");
+      const experienceLines = doc.splitTextToSize(app.experience || "Não informado", pageWidth - margin * 2);
+      doc.text(experienceLines, margin, y);
+      y += experienceLines.length * lineHeight + lineHeight;
+
+      // Additional info
+      if (app.salary_expectation || app.availability) {
+        doc.setFont("helvetica", "bold");
+        doc.text("Informações Adicionais", margin, y);
+        y += lineHeight;
+        doc.setFont("helvetica", "normal");
+        if (app.salary_expectation) {
+          doc.text(`Pretensão Salarial: ${app.salary_expectation}`, margin, y);
+          y += lineHeight;
+        }
+        if (app.availability) {
+          doc.text(`Disponibilidade: ${app.availability}`, margin, y);
+          y += lineHeight;
+        }
+        y += lineHeight;
+      }
+
+      // Expectations
+      if (app.expectations) {
+        doc.setFont("helvetica", "bold");
+        doc.text("Expectativas", margin, y);
+        y += lineHeight;
+        doc.setFont("helvetica", "normal");
+        const expectLines = doc.splitTextToSize(app.expectations, pageWidth - margin * 2);
+        doc.text(expectLines, margin, y);
+        y += expectLines.length * lineHeight + lineHeight;
+      }
+
+      // Links
+      if (app.linkedin_url || app.portfolio_url) {
+        doc.setFont("helvetica", "bold");
+        doc.text("Links", margin, y);
+        y += lineHeight;
+        doc.setFont("helvetica", "normal");
+        if (app.linkedin_url) {
+          doc.text(`LinkedIn: ${app.linkedin_url}`, margin, y);
+          y += lineHeight;
+        }
+        if (app.portfolio_url) {
+          doc.text(`Portfólio: ${app.portfolio_url}`, margin, y);
+          y += lineHeight;
+        }
+        y += lineHeight;
+      }
+
+      // Additional notes
+      if (app.additional_info) {
+        doc.setFont("helvetica", "bold");
+        doc.text("Observações", margin, y);
+        y += lineHeight;
+        doc.setFont("helvetica", "normal");
+        const notesLines = doc.splitTextToSize(app.additional_info, pageWidth - margin * 2);
+        doc.text(notesLines, margin, y);
+        y += notesLines.length * lineHeight + lineHeight;
+      }
+
+      // Footer
+      doc.setTextColor(150);
+      doc.setFontSize(10);
+      doc.text(
+        `Candidatura recebida em ${new Date(app.created_at).toLocaleDateString("pt-BR")}`,
+        margin,
+        doc.internal.pageSize.getHeight() - 15
+      );
+    });
+
+    doc.save(`candidatos_${new Date().toISOString().split("T")[0]}.pdf`);
 
     toast({
-      title: "Excel exportado!",
+      title: "PDF exportado!",
       description: `${filteredApplications.length} candidato(s) exportado(s) com sucesso.`,
+    });
+  };
+
+  const downloadAllResumes = async () => {
+    const applicationsWithResume = filteredApplications.filter((app) => app.resume_url);
+
+    if (applicationsWithResume.length === 0) {
+      toast({
+        title: "Nenhum currículo",
+        description: "Nenhum candidato possui currículo anexado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Baixando currículos...",
+      description: `Iniciando download de ${applicationsWithResume.length} currículo(s).`,
+    });
+
+    for (const app of applicationsWithResume) {
+      try {
+        const { data, error } = await supabase.storage
+          .from("resumes")
+          .download(app.resume_url!);
+
+        if (error) {
+          console.error(`Erro ao baixar currículo de ${app.full_name}:`, error);
+          continue;
+        }
+
+        // Get file extension from original path
+        const extension = app.resume_url!.split(".").pop() || "pdf";
+        const fileName = `curriculo_${app.full_name.replace(/\s+/g, "_")}.${extension}`;
+
+        // Download file
+        const url = URL.createObjectURL(data);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error(`Erro ao processar currículo de ${app.full_name}:`, error);
+      }
+    }
+
+    toast({
+      title: "Currículos baixados!",
+      description: `${applicationsWithResume.length} currículo(s) baixado(s).`,
     });
   };
 
@@ -200,10 +348,20 @@ const TodosCandidatos = ({ companyId }: TodosCandidatosProps) => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h2 className="text-xl font-bold text-foreground">Todos os Candidatos</h2>
-        <Button onClick={exportToExcel} disabled={filteredApplications.length === 0}>
-          <Download size={18} />
-          Exportar Excel ({filteredApplications.length})
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={exportToPDF} disabled={filteredApplications.length === 0}>
+            <FileText size={18} />
+            Exportar PDF ({filteredApplications.length})
+          </Button>
+          <Button 
+            onClick={downloadAllResumes} 
+            variant="outline"
+            disabled={filteredApplications.filter(a => a.resume_url).length === 0}
+          >
+            <Paperclip size={18} />
+            Baixar Currículos ({filteredApplications.filter(a => a.resume_url).length})
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
