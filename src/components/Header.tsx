@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import logo from "@/assets/logo-recrutamente.png";
 
 const navLinks = [
@@ -30,7 +29,7 @@ export function Header() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-b border-border shadow-sm">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-card backdrop-blur-md border-b border-border shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
@@ -52,9 +51,8 @@ export function Header() {
             ))}
           </nav>
 
-          {/* CTA Button & Theme Toggle */}
-          <div className="hidden lg:flex items-center gap-2">
-            <ThemeToggle />
+          {/* CTA Button */}
+          <div className="hidden lg:flex items-center gap-4">
             <Button variant="whatsapp" asChild>
               <a
                 href="https://wa.me/5581981985374"
@@ -66,17 +64,14 @@ export function Header() {
             </Button>
           </div>
 
-          {/* Mobile: Theme Toggle & Menu Button */}
-          <div className="lg:hidden flex items-center gap-2">
-            <ThemeToggle />
-            <button
-              className="p-2 text-foreground"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              aria-label="Toggle menu"
-            >
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
+          {/* Mobile Menu Button */}
+          <button
+            className="lg:hidden p-2 text-foreground"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
 
         {/* Mobile Navigation */}
