@@ -40,7 +40,7 @@ export const FounderSection = () => {
               </div>
             </div>
 
-            <p className="text-foreground leading-relaxed">Fundador, com mais de 15 anos de experiência profissional nas áreas de jurídico consultivo, gestão de carteira de clientes, consultoria em gestão financeira estratégica, valuation, M&A (Fusões e Aquisições) e gestão de pessoas.<span className="font-semibold text-accent">15 anos de experiência profissional</span> nas áreas de jurídico consultivo, gestão de carteira de clientes, consultoria em gestão financeira estratégica, valuation, M&A (Fusões e Aquisições) e gestão de pessoas.
+            <p className="text-foreground leading-relaxed">Bacharel em Direito, com mais de 15 anos de experiência profissional nas áreas de jurídico consultivo, gestão de carteira de clientes, consultoria em gestão financeira estratégica, valuation, M&A (Fusões e Aquisições) e gestão de pessoas.<span className="font-semibold text-accent">15 anos de experiência profissional</span> nas áreas de jurídico consultivo, gestão de carteira de clientes, consultoria em gestão financeira estratégica, valuation, M&A (Fusões e Aquisições) e gestão de pessoas.
             </p>
 
             <p className="text-foreground leading-relaxed">
