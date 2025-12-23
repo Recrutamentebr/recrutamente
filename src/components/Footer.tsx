@@ -82,11 +82,11 @@ export function Footer() {
                 (81) 98198-5374
               </a>
               <a
-                href="mailto:contato@recrutamente.com.br"
+                href="mailto:denys@recrutamente.site"
                 className="flex items-center gap-3 text-primary-foreground/80 hover:text-primary-foreground transition-colors"
               >
                 <Mail size={18} />
-                contato@recrutamente.com.br
+                denys@recrutamente.site
               </a>
               <span className="flex items-center gap-3 text-primary-foreground/80">
                 <MapPin size={18} />
