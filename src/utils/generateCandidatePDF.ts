@@ -1,6 +1,6 @@
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
-import logoRecrutamente from "@/assets/logo-recrutamente.png";
+import logoRecrutamentePDF from "@/assets/logo-recrutamente-pdf.png";
 
 interface Application {
   id: string;
@@ -408,7 +408,7 @@ export const generateBulkPDF = async (
           }
         };
         img.onerror = reject;
-        img.src = logoRecrutamente;
+        img.src = logoRecrutamentePDF;
       });
     };
 
