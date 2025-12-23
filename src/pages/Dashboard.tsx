@@ -298,12 +298,14 @@ const DashboardPage = () => {
                                 {job.level}
                               </span>
                             </div>
-                            <h3 className="font-bold text-foreground text-lg">{job.title}</h3>
+                            <h3 className="font-bold text-foreground text-lg">
+                              {job.title}
+                              <span className="ml-2 text-sm font-medium text-accent">
+                                ({job.applications_count} candidatura{job.applications_count !== 1 ? "s" : ""})
+                              </span>
+                            </h3>
                             <p className="text-muted-foreground text-sm">
                               {job.area} • {job.city}, {job.state}
-                            </p>
-                            <p className="text-accent font-medium text-sm mt-2">
-                              {job.applications_count} candidatura{job.applications_count !== 1 ? "s" : ""}
                             </p>
                           </div>
                           <div className="flex flex-wrap gap-2">

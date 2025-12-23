@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Loader2, Users, Mail, Settings, Briefcase, Check, Clock } from "lucide-react";
+import { Plus, Trash2, Loader2, Users, Mail, Settings, Briefcase, Check, Clock, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -361,13 +361,18 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
           </p>
         </div>
         
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus size={18} />
-              Novo Cliente
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => { setLoading(true); fetchData(); }}>
+            <RefreshCw size={18} />
+            Atualizar
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus size={18} />
+                Novo Cliente
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Criar Novo Cliente</DialogTitle>
@@ -448,6 +453,7 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {clients.length > 0 ? (
