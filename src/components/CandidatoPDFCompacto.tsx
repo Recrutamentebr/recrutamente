@@ -1,6 +1,5 @@
 import { forwardRef } from "react";
 import { ScoredQuestion, scoreLabels } from "@/types/customQuestions";
-import logoRecrutamente from "@/assets/logo-recrutamente.png";
 
 interface CustomQuestionsData {
   predefinedQuestions?: string[];
@@ -345,34 +344,8 @@ export const CandidatoPDFCompacto = forwardRef<HTMLDivElement, CandidatoPDFCompa
               overflow: "hidden",
             }}
           >
-            {/* Page Header */}
-            <div
-              style={{
-                padding: "12px 28px",
-                borderBottom: "2px solid #E5E7EB",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                backgroundColor: "#F8FAFC",
-                height: "45px",
-                boxSizing: "border-box",
-              }}
-            >
-              <img
-                src={logoRecrutamente}
-                alt="RecrutaMente"
-                style={{ height: "28px", objectFit: "contain" }}
-                crossOrigin="anonymous"
-              />
-              <div style={{ textAlign: "right" }}>
-                <span style={{ fontSize: "10px", color: "#6B7280" }}>
-                  Página {pageIndex + 1} de {pages.length}
-                </span>
-              </div>
-            </div>
-
             {/* Candidates Container */}
-            <div style={{ height: "1032px" }}> {/* 1123 - 45 header - 36 footer - 10 margin = ~1032 */}
+            <div style={{ height: "1087px" }}> {/* 1123 - 36 footer = 1087 */}
               {pageApps.map((app) => (
                 <CandidateCard
                   key={app.id}
