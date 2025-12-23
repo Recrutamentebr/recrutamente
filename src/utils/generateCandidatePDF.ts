@@ -1,5 +1,6 @@
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
+import logoRecrutamente from "@/assets/logo-recrutamente.png";
 
 interface Application {
   id: string;
@@ -212,17 +213,51 @@ export const generateSimplePDF = async (
     const sections = reportElement.querySelectorAll('[data-section]');
     const containerWidth = reportElement.offsetWidth || 794;
 
+    // Load logo image as base64
+    const loadLogoAsBase64 = (): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+          } else {
+            reject(new Error('Could not get canvas context'));
+          }
+        };
+        img.onerror = reject;
+        img.src = logoRecrutamente;
+      });
+    };
+
+    let logoBase64: string | null = null;
+    try {
+      logoBase64 = await loadLogoAsBase64();
+    } catch (e) {
+      console.warn('Could not load logo:', e);
+    }
+
     // Function to add header with logo to each page
-    const addPageHeader = async (pageNum: number, totalPages: number) => {
+    const addPageHeader = (pageNum: number, totalPages: number) => {
       // Add decorative top bar
       pdf.setFillColor(30, 58, 138);
       pdf.rect(0, 0, imgWidth, 3, 'F');
       
-      // Add logo text (since we can't easily embed the image)
-      pdf.setFontSize(14);
-      pdf.setTextColor(30, 58, 138);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('RecrutaMente', 10, 15);
+      // Add logo image
+      if (logoBase64) {
+        pdf.addImage(logoBase64, 'PNG', 10, 6, 35, 12);
+      } else {
+        // Fallback to text
+        pdf.setFontSize(14);
+        pdf.setTextColor(30, 58, 138);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('RecrutaMente', 10, 15);
+      }
       
       // Add page number
       pdf.setFontSize(9);
@@ -240,7 +275,7 @@ export const generateSimplePDF = async (
     const addPageFooter = () => {
       pdf.setFontSize(8);
       pdf.setTextColor(156, 163, 175);
-      pdf.text('Documento Confidencial • Uso Exclusivo para Processo Seletivo', imgWidth / 2, pageHeight - 5, { align: 'center' });
+      pdf.text('Documento Confidencial • www.recrutamente.site', imgWidth / 2, pageHeight - 5, { align: 'center' });
     };
 
     if (sections.length === 0) {
@@ -261,7 +296,7 @@ export const generateSimplePDF = async (
           pdf.addPage();
         }
         
-        await addPageHeader(page + 1, totalPages);
+        addPageHeader(page + 1, totalPages);
         
         // Calculate source and destination positions
         const srcY = page * (canvas.height / totalPages);
@@ -316,7 +351,7 @@ export const generateSimplePDF = async (
           pdf.addPage();
         }
 
-        await addPageHeader(pageIndex + 1, totalPages);
+        addPageHeader(pageIndex + 1, totalPages);
 
         const pageGroup = sectionGroups[pageIndex];
         
@@ -415,15 +450,50 @@ export const generateBulkPDF = async (
     const pdf = new jsPDF("p", "mm", "a4");
     const totalPages = Math.ceil(imgHeight / usableHeight);
 
+    // Load logo image as base64
+    const loadLogoAsBase64 = (): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+          } else {
+            reject(new Error('Could not get canvas context'));
+          }
+        };
+        img.onerror = reject;
+        img.src = logoRecrutamente;
+      });
+    };
+
+    let logoBase64: string | null = null;
+    try {
+      logoBase64 = await loadLogoAsBase64();
+    } catch (e) {
+      console.warn('Could not load logo:', e);
+    }
+
     // Function to add header with logo
     const addPageHeader = (pageNum: number) => {
       pdf.setFillColor(30, 58, 138);
       pdf.rect(0, 0, imgWidth, 3, 'F');
       
-      pdf.setFontSize(12);
-      pdf.setTextColor(30, 58, 138);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('RecrutaMente', 10, 12);
+      // Add logo image
+      if (logoBase64) {
+        pdf.addImage(logoBase64, 'PNG', 10, 5, 30, 10);
+      } else {
+        // Fallback to text
+        pdf.setFontSize(12);
+        pdf.setTextColor(30, 58, 138);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('RecrutaMente', 10, 12);
+      }
       
       pdf.setFontSize(9);
       pdf.setTextColor(107, 114, 128);
@@ -439,7 +509,7 @@ export const generateBulkPDF = async (
     const addPageFooter = () => {
       pdf.setFontSize(7);
       pdf.setTextColor(156, 163, 175);
-      pdf.text('Documento Confidencial • www.recrutamente.com.br', imgWidth / 2, pageHeight - 4, { align: 'center' });
+      pdf.text('Documento Confidencial • www.recrutamente.site', imgWidth / 2, pageHeight - 4, { align: 'center' });
     };
     
     let heightLeft = imgHeight;
