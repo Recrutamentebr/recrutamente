@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
   Loader2, 
   Search,
@@ -8,14 +8,14 @@ import {
   MapPin,
   Trash2,
   Edit,
-  Users
+  Users,
+  Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +34,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { CandidatoPDFSimples } from "./CandidatoPDFSimples";
+import { generateSimplePDF } from "@/utils/generateCandidatePDF";
 
 interface Application {
   id: string;
@@ -98,6 +100,9 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generatingPDF, setGeneratingPDF] = useState<string | null>(null);
+  const [pdfApplication, setPdfApplication] = useState<Application | null>(null);
+  const pdfRef = useRef<HTMLDivElement>(null);
   
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -203,6 +208,43 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
     }
   };
 
+  const handleDownloadPDF = async (app: Application) => {
+    if (!app.job) {
+      toast({
+        title: "Erro",
+        description: "Dados da vaga não encontrados.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setGeneratingPDF(app.id);
+    setPdfApplication(app);
+
+    // Wait for the PDF component to render
+    setTimeout(async () => {
+      try {
+        if (pdfRef.current) {
+          await generateSimplePDF(pdfRef.current, app.full_name);
+          toast({
+            title: "PDF gerado",
+            description: "O relatório do candidato foi baixado com sucesso.",
+          });
+        }
+      } catch (error) {
+        console.error("Error generating PDF:", error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível gerar o PDF.",
+          variant: "destructive",
+        });
+      } finally {
+        setGeneratingPDF(null);
+        setPdfApplication(null);
+      }
+    }, 500);
+  };
+
   const filteredApplications = applications.filter(app => {
     const matchesSearch = 
       app.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -306,6 +348,22 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  {/* Download PDF */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDownloadPDF(app)}
+                    disabled={generatingPDF === app.id}
+                    className="bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100 hover:text-amber-800"
+                  >
+                    {generatingPDF === app.id ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <Download size={16} />
+                    )}
+                    Baixar PDF
+                  </Button>
+
                   {/* View Details Dialog */}
                   <Dialog>
                     <DialogTrigger asChild>
@@ -447,6 +505,23 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
               ? "Quando candidatos se aplicarem para suas vagas, você verá aqui."
               : "Nenhuma candidatura corresponde aos filtros selecionados."}
           </p>
+        </div>
+      )}
+
+      {/* Hidden PDF Component for Generation */}
+      {pdfApplication && pdfApplication.job && (
+        <div
+          style={{
+            position: "absolute",
+            left: "-9999px",
+            top: "-9999px",
+          }}
+        >
+          <CandidatoPDFSimples
+            ref={pdfRef}
+            application={pdfApplication}
+            job={pdfApplication.job}
+          />
         </div>
       )}
     </div>
