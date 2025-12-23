@@ -5,19 +5,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { customQuestionsSections, getQuestionById } from "@/data/customQuestions";
+import { ScoredQuestion } from "@/types/customQuestions";
+
+interface CustomQuestionsData {
+  predefinedQuestions?: string[];
+  scoredQuestions?: ScoredQuestion[];
+}
 
 interface Job {
   id: string;
   title: string;
   city: string;
   state: string;
-  custom_questions: string[] | null;
+  custom_questions: CustomQuestionsData | string[] | null;
 }
 
 const escolaridade = [
@@ -64,7 +72,7 @@ const CandidaturaPage = () => {
     
     const jobsData = (data || []).map(j => ({
       ...j,
-      custom_questions: j.custom_questions as string[] | null
+      custom_questions: j.custom_questions as CustomQuestionsData | string[] | null
     }));
     
     setJobs(jobsData);
@@ -169,15 +177,25 @@ const CandidaturaPage = () => {
     }
   };
 
-  // Get custom questions for selected job
+  // Get predefined custom questions for selected job
   const getJobCustomQuestions = () => {
-    if (!job?.custom_questions || !Array.isArray(job.custom_questions)) return [];
+    if (!job?.custom_questions) return [];
+    
+    let predefinedQuestionIds: string[] = [];
+    
+    if (Array.isArray(job.custom_questions)) {
+      // Old format - just array of strings
+      predefinedQuestionIds = job.custom_questions;
+    } else if (typeof job.custom_questions === 'object' && job.custom_questions.predefinedQuestions) {
+      // New format
+      predefinedQuestionIds = job.custom_questions.predefinedQuestions;
+    }
     
     const questions: { id: string; label: string; options: string[]; sectionTitle: string }[] = [];
     
     for (const section of customQuestionsSections) {
       for (const question of section.questions) {
-        if (job.custom_questions.includes(question.id)) {
+        if (predefinedQuestionIds.includes(question.id)) {
           questions.push({
             id: question.id,
             label: question.label,
@@ -191,7 +209,19 @@ const CandidaturaPage = () => {
     return questions;
   };
 
+  // Get scored questions for selected job
+  const getScoredQuestions = (): ScoredQuestion[] => {
+    if (!job?.custom_questions) return [];
+    
+    if (Array.isArray(job.custom_questions)) {
+      return [];
+    }
+    
+    return job.custom_questions.scoredQuestions || [];
+  };
+
   const customQuestions = getJobCustomQuestions();
+  const scoredQuestions = getScoredQuestions();
 
   if (isSubmitted) {
     return (
@@ -411,6 +441,47 @@ const CandidaturaPage = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* Scored Questions - Questions with hidden scores */}
+                  {scoredQuestions.length > 0 && (
+                    <div>
+                      <h2 className="font-bold text-xl text-foreground mb-6 pb-4 border-b border-border">
+                        Perguntas da Vaga
+                      </h2>
+                      <div className="space-y-6">
+                        {scoredQuestions.map((question) => (
+                          <div key={question.id} className="space-y-3">
+                            <label className="text-sm font-medium text-foreground">
+                              {question.question} *
+                            </label>
+                            <RadioGroup
+                              value={customAnswers[`scored_${question.id}`] || ""}
+                              onValueChange={(v) => handleCustomAnswerChange(`scored_${question.id}`, v)}
+                              className="space-y-2"
+                            >
+                              {question.options.map((option, index) => (
+                                <div
+                                  key={index}
+                                  className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:border-accent/50 transition-colors"
+                                >
+                                  <RadioGroupItem
+                                    value={`${option.text}|${option.score}`}
+                                    id={`${question.id}-${index}`}
+                                  />
+                                  <Label
+                                    htmlFor={`${question.id}-${index}`}
+                                    className="flex-1 cursor-pointer text-foreground"
+                                  >
+                                    {option.text}
+                                  </Label>
+                                </div>
+                              ))}
+                            </RadioGroup>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Custom Questions - Dynamic based on job */}
                   {customQuestions.length > 0 && (

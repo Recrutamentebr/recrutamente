@@ -15,6 +15,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { customQuestionsSections } from "@/data/customQuestions";
+import { CustomQuestionBuilder } from "@/components/CustomQuestionBuilder";
+import { ScoredQuestion } from "@/types/customQuestions";
 
 const areas = [
   "Tecnologia",
@@ -50,6 +52,7 @@ const EditarVagaPage = () => {
   const [isFetching, setIsFetching] = useState(true);
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
+  const [scoredQuestions, setScoredQuestions] = useState<ScoredQuestion[]>([]);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -110,10 +113,22 @@ const EditarVagaPage = () => {
         external_form_url: data.external_form_url || "",
       });
 
-      // Load custom questions
-      const customQuestions = data.custom_questions as string[] | null;
-      if (customQuestions && Array.isArray(customQuestions)) {
-        setSelectedQuestions(customQuestions);
+      // Load custom questions (new format)
+      const customQuestionsData = data.custom_questions as { predefinedQuestions?: string[]; scoredQuestions?: ScoredQuestion[] } | string[] | null;
+      
+      if (customQuestionsData) {
+        if (Array.isArray(customQuestionsData)) {
+          // Old format - just array of strings
+          setSelectedQuestions(customQuestionsData);
+        } else if (typeof customQuestionsData === 'object') {
+          // New format
+          if (customQuestionsData.predefinedQuestions) {
+            setSelectedQuestions(customQuestionsData.predefinedQuestions);
+          }
+          if (customQuestionsData.scoredQuestions) {
+            setScoredQuestions(customQuestionsData.scoredQuestions);
+          }
+        }
       }
     } catch (error) {
       console.error("Error fetching job:", error);
@@ -194,7 +209,10 @@ const EditarVagaPage = () => {
           salary_range: formData.salary_range || null,
           is_active: formData.is_active,
           external_form_url: formData.form_type === "external" ? formData.external_form_url : null,
-          custom_questions: selectedQuestions,
+          custom_questions: {
+            predefinedQuestions: selectedQuestions,
+            scoredQuestions: scoredQuestions.filter(q => q.question && q.options.every(o => o.text)),
+          } as any,
         })
         .eq("id", id);
 
@@ -494,15 +512,27 @@ const EditarVagaPage = () => {
                     )}
                   </div>
 
-                  {/* Custom Questions */}
+                  {/* Custom Scored Questions */}
+                  {formData.form_type === "internal" && (
+                    <div>
+                      <h2 className="font-bold text-xl text-foreground mb-6 pb-4 border-b border-border">
+                        Perguntas Personalizadas da Vaga
+                      </h2>
+                      <CustomQuestionBuilder
+                        questions={scoredQuestions}
+                        onChange={setScoredQuestions}
+                      />
+                    </div>
+                  )}
+
+                  {/* Predefined Custom Questions */}
                   {formData.form_type === "internal" && (
                     <div>
                       <h2 className="font-bold text-xl text-foreground mb-4 pb-4 border-b border-border">
-                        Perguntas Personalizadas
+                        Perguntas do Banco de Perguntas
                       </h2>
                       <p className="text-sm text-muted-foreground mb-6">
-                        Selecione as perguntas adicionais que deseja incluir no formulário de candidatura. 
-                        As perguntas fixas (nome, e-mail, telefone, experiência, etc.) sempre aparecerão.
+                        Selecione perguntas adicionais do banco de perguntas pré-definidas.
                       </p>
 
                       {selectedQuestions.length > 0 && (
