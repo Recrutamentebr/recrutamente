@@ -11,6 +11,8 @@ const navLinks = [
   { href: "/vagas", label: "Banco de Talentos" },
   { href: "/empresas", label: "Para Empresas" },
   { href: "/#contato", label: "Contato" },
+  { href: "/auth", label: "Painel Admin" },
+  { href: "/cliente-login", label: "Painel Cliente" },
 ];
 
 export function Header() {
