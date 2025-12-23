@@ -1,24 +1,39 @@
-import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { 
-  FileText, 
-  Download, 
   Loader2, 
   Search,
   Eye,
   Mail,
   Phone,
-  MapPin
+  MapPin,
+  Trash2,
+  Edit,
+  Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { getQuestionLabel } from "@/data/customQuestions";
-import { FitCulturalAnalysis } from "./FitCulturalAnalysis";
-import { CandidatoPDFReport } from "./CandidatoPDFReport";
-import { generateCandidatePDF, calculateAnalysisData } from "@/utils/generateCandidatePDF";
+import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface Application {
   id: string;
@@ -38,7 +53,6 @@ interface Application {
   resume_url: string | null;
   status: string;
   created_at: string;
-  custom_answers: Record<string, string> | null;
   job_id: string;
   job?: {
     id: string;
@@ -84,16 +98,11 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
-  const [generatingPDF, setGeneratingPDF] = useState<string | null>(null);
   
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedJob, setSelectedJob] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
-
-  // PDF Report ref
-  const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchData();
@@ -101,7 +110,6 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
 
   const fetchData = async () => {
     try {
-      // Fetch jobs first
       const { data: jobsData, error: jobsError } = await supabase
         .from("jobs")
         .select("id, title, area, city, state, level")
@@ -116,7 +124,6 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
         return;
       }
 
-      // Fetch all applications for company's jobs
       const jobIds = jobsData.map(j => j.id);
       const { data: appsData, error: appsError } = await supabase
         .from("applications")
@@ -126,10 +133,8 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
 
       if (appsError) throw appsError;
 
-      // Map applications with job data
       const appsWithJobs = (appsData || []).map(app => ({
         ...app,
-        custom_answers: app.custom_answers as Record<string, string> | null,
         job: jobsData.find(j => j.id === app.job_id),
       }));
 
@@ -146,36 +151,58 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
     }
   };
 
-  const handleGeneratePDF = async (application: Application) => {
-    if (!application.job) return;
-    
-    setGeneratingPDF(application.id);
-    setSelectedApplication(application);
-
-    // Wait for the report to render
-    await new Promise(resolve => setTimeout(resolve, 500));
-
+  const handleDeleteApplication = async (applicationId: string) => {
     try {
-      if (reportRef.current) {
-        await generateCandidatePDF(reportRef.current, application, application.job);
-        toast({
-          title: "PDF gerado",
-          description: "O relatório foi baixado com sucesso.",
-        });
-      }
+      const { error } = await supabase
+        .from("applications")
+        .delete()
+        .eq("id", applicationId);
+
+      if (error) throw error;
+
+      setApplications(applications.filter((a) => a.id !== applicationId));
+      toast({
+        title: "Candidatura excluída",
+        description: "A candidatura foi excluída com sucesso.",
+      });
     } catch (error) {
-      console.error("Error generating PDF:", error);
+      console.error("Error deleting application:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível gerar o PDF.",
+        description: "Não foi possível excluir a candidatura.",
         variant: "destructive",
       });
-    } finally {
-      setGeneratingPDF(null);
     }
   };
 
-  // Filter applications
+  const handleUpdateStatus = async (applicationId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from("applications")
+        .update({ status: newStatus })
+        .eq("id", applicationId);
+
+      if (error) throw error;
+
+      setApplications(
+        applications.map((a) =>
+          a.id === applicationId ? { ...a, status: newStatus } : a
+        )
+      );
+      toast({
+        title: "Status atualizado",
+        description: "O status da candidatura foi atualizado.",
+      });
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o status.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const filteredApplications = applications.filter(app => {
     const matchesSearch = 
       app.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -279,25 +306,131 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to={`/dashboard/vagas/${app.job_id}/candidaturas`}>
-                      <Eye size={16} />
-                      Ver Detalhes
-                    </Link>
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => handleGeneratePDF(app)}
-                    disabled={generatingPDF === app.id}
+                  {/* View Details Dialog */}
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Eye size={16} />
+                        Ver Detalhes
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>{app.full_name}</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-sm text-muted-foreground">E-mail</p>
+                            <p className="font-medium">{app.email}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Telefone</p>
+                            <p className="font-medium">{app.phone}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Localização</p>
+                            <p className="font-medium">{app.city}, {app.state}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Escolaridade</p>
+                            <p className="font-medium">{app.education_level}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Experiência</p>
+                            <p className="font-medium">{app.experience}</p>
+                          </div>
+                          {app.salary_expectation && (
+                            <div>
+                              <p className="text-sm text-muted-foreground">Pretensão Salarial</p>
+                              <p className="font-medium">{app.salary_expectation}</p>
+                            </div>
+                          )}
+                          {app.availability && (
+                            <div>
+                              <p className="text-sm text-muted-foreground">Disponibilidade</p>
+                              <p className="font-medium">{app.availability}</p>
+                            </div>
+                          )}
+                        </div>
+                        {app.linkedin_url && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">LinkedIn</p>
+                            <a href={app.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                              {app.linkedin_url}
+                            </a>
+                          </div>
+                        )}
+                        {app.portfolio_url && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Portfólio</p>
+                            <a href={app.portfolio_url} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                              {app.portfolio_url}
+                            </a>
+                          </div>
+                        )}
+                        {app.resume_url && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Currículo</p>
+                            <a href={app.resume_url} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                              Ver Currículo
+                            </a>
+                          </div>
+                        )}
+                        {app.expectations && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Expectativas</p>
+                            <p className="text-foreground">{app.expectations}</p>
+                          </div>
+                        )}
+                        {app.additional_info && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Informações Adicionais</p>
+                            <p className="text-foreground">{app.additional_info}</p>
+                          </div>
+                        )}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
+                  {/* Edit Status */}
+                  <Select
+                    value={app.status}
+                    onValueChange={(value) => handleUpdateStatus(app.id, value)}
                   >
-                    {generatingPDF === app.id ? (
-                      <Loader2 size={16} className="animate-spin" />
-                    ) : (
-                      <FileText size={16} />
-                    )}
-                    Gerar PDF
-                  </Button>
+                    <SelectTrigger className="w-[140px]">
+                      <Edit size={16} className="mr-2" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(statusLabels).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Delete */}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="sm">
+                        <Trash2 size={16} />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Excluir candidatura?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta ação não pode ser desfeita. A candidatura de {app.full_name} será permanentemente excluída.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteApplication(app.id)}>
+                          Excluir
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             </div>
@@ -305,7 +438,7 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
         </div>
       ) : (
         <div className="text-center py-16 bg-card rounded-2xl border border-border">
-          <FileText className="mx-auto text-muted-foreground mb-4" size={48} />
+          <Users className="mx-auto text-muted-foreground mb-4" size={48} />
           <h3 className="text-lg font-medium text-foreground mb-2">
             Nenhuma candidatura encontrada
           </h3>
@@ -314,18 +447,6 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
               ? "Quando candidatos se aplicarem para suas vagas, você verá aqui."
               : "Nenhuma candidatura corresponde aos filtros selecionados."}
           </p>
-        </div>
-      )}
-
-      {/* Hidden PDF Report for generation */}
-      {selectedApplication && selectedApplication.job && (
-        <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
-          <CandidatoPDFReport
-            ref={reportRef}
-            application={selectedApplication}
-            job={selectedApplication.job}
-            analysisData={calculateAnalysisData(selectedApplication.custom_answers)}
-          />
         </div>
       )}
     </div>
