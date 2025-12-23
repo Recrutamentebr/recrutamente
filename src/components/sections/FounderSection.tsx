@@ -1,4 +1,4 @@
-import { MapPin, Award } from "lucide-react";
+import { MapPin, Award, Linkedin } from "lucide-react";
 import founderPhoto from "@/assets/founder-photo.jpeg";
 export const FounderSection = () => {
   return <section id="quem-somos" className="py-20 bg-card">
@@ -35,7 +35,18 @@ export const FounderSection = () => {
                 <Award className="text-accent" size={24} />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-foreground">Denys Lira</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-xl font-bold text-foreground">Denys Lira</h3>
+                  <a 
+                    href="https://www.linkedin.com/in/denyslira" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-accent hover:text-accent/80 transition-colors"
+                    aria-label="LinkedIn de Denys Lira"
+                  >
+                    <Linkedin size={20} />
+                  </a>
+                </div>
                 <p className="text-muted-foreground text-sm">Bacharel em Direito</p>
               </div>
             </div>
