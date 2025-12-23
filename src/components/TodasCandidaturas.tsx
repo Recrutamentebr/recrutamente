@@ -225,7 +225,7 @@ export const TodasCandidaturas = ({ companyId }: TodasCandidaturasProps) => {
     setTimeout(async () => {
       try {
         if (pdfRef.current) {
-          await generateSimplePDF(pdfRef.current, app.full_name);
+          await generateSimplePDF(pdfRef.current, app.full_name, app.resume_url);
           toast({
             title: "PDF gerado",
             description: "O relatório do candidato foi baixado com sucesso.",
