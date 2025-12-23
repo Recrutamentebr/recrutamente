@@ -25,6 +25,7 @@ import { z } from "zod";
 
 interface Client {
   id: string;
+  client_user_id: string | null;
   email: string;
   created_at: string;
   job_ids: string[];
@@ -82,7 +83,7 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
       // Get client_company_access for this company
       const { data: accessData, error } = await supabase
         .from("client_company_access")
-        .select("id, client_user_id, client_email, created_at, password_set")
+        .select("id, client_user_id, client_email, created_at, password_set, pending_job_ids")
         .eq("company_id", companyId);
 
       if (error) throw error;
@@ -93,20 +94,26 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
         return;
       }
 
-      // Fetch job access for each client (only those with user_id set)
+      // Fetch job access for each client
       const clientsList: Client[] = await Promise.all(
         accessData.map(async (access) => {
           let jobIds: string[] = [];
-          if (access.client_user_id) {
+          
+          if (access.password_set && access.client_user_id) {
+            // User activated - get from client_job_access
             const { data: jobAccess } = await supabase
               .from("client_job_access")
               .select("job_id")
               .eq("client_user_id", access.client_user_id);
             jobIds = jobAccess?.map(j => j.job_id) || [];
+          } else {
+            // Pending invitation - get from pending_job_ids
+            jobIds = (access.pending_job_ids as string[]) || [];
           }
 
           return {
             id: access.id,
+            client_user_id: access.client_user_id,
             email: access.client_email || "Email não registrado",
             created_at: access.created_at,
             job_ids: jobIds,
@@ -189,7 +196,7 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
         return;
       }
 
-      // Create invitation (no user created yet)
+      // Create invitation with pending job IDs
       const { data: accessData, error: accessError } = await supabase
         .from("client_company_access")
         .insert({
@@ -197,6 +204,7 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
           created_by: currentUser.id,
           client_email: formData.email,
           password_set: false,
+          pending_job_ids: selectedJobs,
         })
         .select()
         .single();
@@ -236,22 +244,31 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
     setSavingJobs(true);
 
     try {
-      // Delete existing job access
-      await supabase
-        .from("client_job_access")
-        .delete()
-        .eq("client_user_id", selectedClient.id);
-
-      // Insert new job access
-      if (selectedJobs.length > 0) {
-        const jobAccessInserts = selectedJobs.map(jobId => ({
-          client_user_id: selectedClient.id,
-          job_id: jobId,
-        }));
-
-        const { error } = await supabase
+      if (selectedClient.password_set && selectedClient.client_user_id) {
+        // Client is active - update client_job_access
+        await supabase
           .from("client_job_access")
-          .insert(jobAccessInserts);
+          .delete()
+          .eq("client_user_id", selectedClient.client_user_id);
+
+        if (selectedJobs.length > 0) {
+          const jobAccessInserts = selectedJobs.map(jobId => ({
+            client_user_id: selectedClient.client_user_id!,
+            job_id: jobId,
+          }));
+
+          const { error } = await supabase
+            .from("client_job_access")
+            .insert(jobAccessInserts);
+
+          if (error) throw error;
+        }
+      } else {
+        // Client is pending - update pending_job_ids
+        const { error } = await supabase
+          .from("client_company_access")
+          .update({ pending_job_ids: selectedJobs })
+          .eq("id", selectedClient.id);
 
         if (error) throw error;
       }
@@ -476,8 +493,6 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
                         variant="outline"
                         size="sm"
                         onClick={() => handleEditClient(client)}
-                        disabled={!client.password_set}
-                        title={!client.password_set ? "Aguardando cliente criar senha" : "Editar vagas"}
                       >
                         <Settings size={16} />
                         Vagas

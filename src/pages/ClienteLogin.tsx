@@ -38,7 +38,7 @@ const ClienteLoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [invitationData, setInvitationData] = useState<{ id: string; company_id: string } | null>(null);
+  const [invitationData, setInvitationData] = useState<{ id: string; company_id: string; pending_job_ids: string[] } | null>(null);
 
   useEffect(() => {
     const checkExistingSession = async () => {
@@ -77,7 +77,7 @@ const ClienteLoginPage = () => {
       // Check if there's an invitation for this email
       const { data: accessData, error } = await supabase
         .from("client_company_access")
-        .select("id, company_id, password_set, client_user_id")
+        .select("id, company_id, password_set, client_user_id, pending_job_ids")
         .eq("client_email", email)
         .single();
 
@@ -91,7 +91,7 @@ const ClienteLoginPage = () => {
         return;
       }
 
-      setInvitationData({ id: accessData.id, company_id: accessData.company_id });
+      setInvitationData({ id: accessData.id, company_id: accessData.company_id, pending_job_ids: (accessData.pending_job_ids as string[]) || [] });
 
       if (accessData.password_set && accessData.client_user_id) {
         // User already created password, show login form
@@ -167,6 +167,18 @@ const ClienteLoginPage = () => {
         .eq("id", invitationData.id);
 
       if (updateError) throw updateError;
+
+      // Transfer pending job access to client_job_access
+      if (invitationData.pending_job_ids && invitationData.pending_job_ids.length > 0) {
+        const jobAccessInserts = invitationData.pending_job_ids.map(jobId => ({
+          client_user_id: signUpData.user!.id,
+          job_id: jobId,
+        }));
+
+        await supabase
+          .from("client_job_access")
+          .insert(jobAccessInserts);
+      }
 
       toast({
         title: "Conta ativada!",
