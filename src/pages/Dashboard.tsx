@@ -12,8 +12,7 @@ import {
   ChevronRight,
   Loader2,
   Building2,
-  UserPlus,
-  FileText
+  UserPlus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/Header";
@@ -23,7 +22,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import GerenciarClientes from "@/components/GerenciarClientes";
-import TodasCandidaturas from "@/components/TodasCandidaturas";
 
 interface Job {
   id: string;
@@ -45,7 +43,7 @@ const DashboardPage = () => {
   
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(true);
-  const [activeTab, setActiveTab] = useState<"jobs" | "profile" | "clients" | "applications">("jobs");
+  const [activeTab, setActiveTab] = useState<"jobs" | "profile" | "clients">("jobs");
 
   useEffect(() => {
     if (!loading && !user) {
@@ -242,13 +240,6 @@ const DashboardPage = () => {
                 Minhas Vagas
               </Button>
               <Button
-                variant={activeTab === "applications" ? "default" : "outline"}
-                onClick={() => setActiveTab("applications")}
-              >
-                <FileText size={18} />
-                Todas Candidaturas
-              </Button>
-              <Button
                 variant={activeTab === "clients" ? "default" : "outline"}
                 onClick={() => setActiveTab("clients")}
               >
@@ -367,11 +358,6 @@ const DashboardPage = () => {
                   </div>
                 )}
               </div>
-            )}
-
-            {/* Applications Tab */}
-            {activeTab === "applications" && (
-              <TodasCandidaturas companyId={company.id} />
             )}
 
             {/* Clients Tab */}
