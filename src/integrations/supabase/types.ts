@@ -85,6 +85,38 @@ export type Database = {
           },
         ]
       }
+      client_company_access: {
+        Row: {
+          client_user_id: string
+          company_id: string
+          created_at: string
+          created_by: string
+          id: string
+        }
+        Insert: {
+          client_user_id: string
+          company_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+        }
+        Update: {
+          client_user_id?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_company_access_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           cnpj: string | null
@@ -227,7 +259,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "company" | "candidate"
+      app_role: "admin" | "company" | "candidate" | "client"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -355,7 +387,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "company", "candidate"],
+      app_role: ["admin", "company", "candidate", "client"],
     },
   },
 } as const
