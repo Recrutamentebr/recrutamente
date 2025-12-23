@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ChevronLeft, Download, Mail, Phone, MapPin, Briefcase, Loader2, FileText, ExternalLink } from "lucide-react";
+import { ChevronLeft, Download, Mail, Phone, MapPin, Briefcase, Loader2, FileText, ExternalLink, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
@@ -141,6 +142,35 @@ const VagaCandidaturasPage = () => {
       toast({
         title: "Erro",
         description: "Não foi possível atualizar o status.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteApplication = async (applicationId: string) => {
+    try {
+      const { error } = await supabase
+        .from("applications")
+        .delete()
+        .eq("id", applicationId);
+
+      if (error) throw error;
+
+      setApplications(apps => apps.filter(app => app.id !== applicationId));
+
+      if (selectedApplication?.id === applicationId) {
+        setSelectedApplication(null);
+      }
+
+      toast({
+        title: "Candidatura excluída",
+        description: "A candidatura foi removida com sucesso.",
+      });
+    } catch (error) {
+      console.error("Error deleting application:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir a candidatura.",
         variant: "destructive",
       });
     }
@@ -354,6 +384,31 @@ const VagaCandidaturasPage = () => {
                             WhatsApp
                           </a>
                         </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive">
+                              <Trash2 size={16} />
+                              Excluir
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir candidatura?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta ação não pode ser desfeita. A candidatura de {selectedApplication.full_name} será permanentemente removida.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteApplication(selectedApplication.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
                   ) : (
