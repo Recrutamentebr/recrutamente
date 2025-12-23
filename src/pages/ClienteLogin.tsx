@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
+import { Eye, EyeOff, Loader2, Lock, Mail, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,30 +11,40 @@ import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import logo from "@/assets/logo-recrutamente.png";
 
-const loginSchema = z.object({
+const emailSchema = z.object({
   email: z.string().email("E-mail inválido"),
-  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
 });
+
+const passwordSchema = z.object({
+  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
+  confirmPassword: z.string().min(6, "Confirme a senha"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "As senhas não coincidem",
+  path: ["confirmPassword"],
+});
+
+type Step = "email" | "create-password" | "login";
 
 const ClienteLoginPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
+  const [step, setStep] = useState<Step>("email");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const [formErrors, setFormErrors] = useState<{ email?: string; password?: string }>({});
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [formErrors, setFormErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [invitationData, setInvitationData] = useState<{ id: string; company_id: string } | null>(null);
 
   useEffect(() => {
     const checkExistingSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session?.user) {
-        // Check if user is a client
         const { data: roleData } = await supabase
           .from("user_roles")
           .select("role")
@@ -51,24 +61,150 @@ const ClienteLoginPage = () => {
     checkExistingSession();
   }, [navigate]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setFormErrors((prev) => ({ ...prev, [name]: undefined }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormErrors({});
 
-    const result = loginSchema.safeParse(formData);
+    const result = emailSchema.safeParse({ email });
     if (!result.success) {
-      const errors: { email?: string; password?: string } = {};
+      setFormErrors({ email: result.error.errors[0].message });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Check if there's an invitation for this email
+      const { data: accessData, error } = await supabase
+        .from("client_company_access")
+        .select("id, company_id, password_set, client_user_id")
+        .eq("client_email", email)
+        .single();
+
+      if (error || !accessData) {
+        toast({
+          title: "Acesso não autorizado",
+          description: "Este e-mail não tem permissão para acessar o portal.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      setInvitationData({ id: accessData.id, company_id: accessData.company_id });
+
+      if (accessData.password_set && accessData.client_user_id) {
+        // User already created password, show login form
+        setStep("login");
+      } else {
+        // First access, show create password form
+        setStep("create-password");
+      }
+    } catch (error) {
+      console.error("Error checking email:", error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao verificar o e-mail.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormErrors({});
+
+    const result = passwordSchema.safeParse({ password, confirmPassword });
+    if (!result.success) {
+      const errors: { password?: string; confirmPassword?: string } = {};
       result.error.errors.forEach((err) => {
-        if (err.path[0] === "email") errors.email = err.message;
         if (err.path[0] === "password") errors.password = err.message;
+        if (err.path[0] === "confirmPassword") errors.confirmPassword = err.message;
       });
       setFormErrors(errors);
+      return;
+    }
+
+    if (!invitationData) {
+      toast({
+        title: "Erro",
+        description: "Dados do convite não encontrados.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Create the user in Supabase Auth
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/cliente`,
+          data: {
+            user_type: "client",
+          },
+        },
+      });
+
+      if (signUpError) throw signUpError;
+
+      if (!signUpData.user) {
+        throw new Error("Erro ao criar usuário");
+      }
+
+      // Update client_company_access with user_id and mark password as set
+      const { error: updateError } = await supabase
+        .from("client_company_access")
+        .update({
+          client_user_id: signUpData.user.id,
+          password_set: true,
+        })
+        .eq("id", invitationData.id);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Conta ativada!",
+        description: "Sua conta foi criada com sucesso. Entrando...",
+      });
+
+      // Auto-login
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) throw signInError;
+
+      navigate("/cliente");
+    } catch (error: any) {
+      console.error("Error creating account:", error);
+      let message = "Ocorreu um erro ao criar sua conta.";
+      if (error.message?.includes("already registered")) {
+        message = "Este e-mail já está registrado. Tente fazer login.";
+        setStep("login");
+      }
+      toast({
+        title: "Erro",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormErrors({});
+
+    if (!password) {
+      setFormErrors({ password: "Digite sua senha" });
       return;
     }
 
@@ -76,8 +212,8 @@ const ClienteLoginPage = () => {
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
+        email,
+        password,
       });
 
       if (error) throw error;
@@ -110,13 +246,20 @@ const ClienteLoginPage = () => {
       toast({
         title: "Erro no login",
         description: error.message === "Invalid login credentials" 
-          ? "E-mail ou senha incorretos." 
+          ? "Senha incorreta." 
           : "Ocorreu um erro ao fazer login.",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleBack = () => {
+    setStep("email");
+    setPassword("");
+    setConfirmPassword("");
+    setFormErrors({});
   };
 
   if (checkingAuth) {
@@ -141,68 +284,188 @@ const ClienteLoginPage = () => {
               Portal do Cliente
             </h1>
             <p className="text-muted-foreground text-center mb-8">
-              Acesse para visualizar as candidaturas
+              {step === "email" && "Digite seu e-mail para acessar"}
+              {step === "create-password" && "Crie sua senha para ativar a conta"}
+              {step === "login" && "Digite sua senha para entrar"}
             </p>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="email">E-mail</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    className="pl-10"
-                    value={formData.email}
-                    onChange={handleChange}
-                    disabled={isLoading}
-                  />
+            {step === "email" && (
+              <form onSubmit={handleEmailSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="email">E-mail</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      className="pl-10"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setFormErrors({});
+                      }}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  {formErrors.email && (
+                    <p className="text-sm text-destructive">{formErrors.email}</p>
+                  )}
                 </div>
-                {formErrors.email && (
-                  <p className="text-sm text-destructive">{formErrors.email}</p>
-                )}
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    className="pl-10 pr-10"
-                    value={formData.password}
-                    onChange={handleChange}
-                    disabled={isLoading}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="animate-spin mr-2" size={18} />
+                      Verificando...
+                    </>
+                  ) : (
+                    "Continuar"
+                  )}
+                </Button>
+              </form>
+            )}
+
+            {step === "create-password" && (
+              <form onSubmit={handleCreatePassword} className="space-y-6">
+                <div className="p-3 bg-muted/50 rounded-lg border border-border mb-4">
+                  <p className="text-sm text-muted-foreground">
+                    <Mail className="inline-block mr-1" size={14} />
+                    {email}
+                  </p>
                 </div>
-                {formErrors.password && (
-                  <p className="text-sm text-destructive">{formErrors.password}</p>
-                )}
-              </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="animate-spin mr-2" size={18} />
-                    Entrando...
-                  </>
-                ) : (
-                  "Entrar"
-                )}
-              </Button>
-            </form>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Criar Senha</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="pl-10 pr-10"
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setFormErrors((prev) => ({ ...prev, password: undefined }));
+                      }}
+                      disabled={isLoading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  {formErrors.password && (
+                    <p className="text-sm text-destructive">{formErrors.password}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="pl-10 pr-10"
+                      value={confirmPassword}
+                      onChange={(e) => {
+                        setConfirmPassword(e.target.value);
+                        setFormErrors((prev) => ({ ...prev, confirmPassword: undefined }));
+                      }}
+                      disabled={isLoading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  {formErrors.confirmPassword && (
+                    <p className="text-sm text-destructive">{formErrors.confirmPassword}</p>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" onClick={handleBack} disabled={isLoading}>
+                    <ArrowLeft size={18} />
+                  </Button>
+                  <Button type="submit" className="flex-1" disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="animate-spin mr-2" size={18} />
+                        Criando conta...
+                      </>
+                    ) : (
+                      "Ativar Conta"
+                    )}
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            {step === "login" && (
+              <form onSubmit={handleLogin} className="space-y-6">
+                <div className="p-3 bg-muted/50 rounded-lg border border-border mb-4">
+                  <p className="text-sm text-muted-foreground">
+                    <Mail className="inline-block mr-1" size={14} />
+                    {email}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="login-password">Senha</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                    <Input
+                      id="login-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="pl-10 pr-10"
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setFormErrors((prev) => ({ ...prev, password: undefined }));
+                      }}
+                      disabled={isLoading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  {formErrors.password && (
+                    <p className="text-sm text-destructive">{formErrors.password}</p>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" onClick={handleBack} disabled={isLoading}>
+                    <ArrowLeft size={18} />
+                  </Button>
+                  <Button type="submit" className="flex-1" disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="animate-spin mr-2" size={18} />
+                        Entrando...
+                      </>
+                    ) : (
+                      "Entrar"
+                    )}
+                  </Button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       </main>

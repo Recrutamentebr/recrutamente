@@ -88,27 +88,30 @@ export type Database = {
       client_company_access: {
         Row: {
           client_email: string | null
-          client_user_id: string
+          client_user_id: string | null
           company_id: string
           created_at: string
           created_by: string
           id: string
+          password_set: boolean
         }
         Insert: {
           client_email?: string | null
-          client_user_id: string
+          client_user_id?: string | null
           company_id: string
           created_at?: string
           created_by: string
           id?: string
+          password_set?: boolean
         }
         Update: {
           client_email?: string | null
-          client_user_id?: string
+          client_user_id?: string | null
           company_id?: string
           created_at?: string
           created_by?: string
           id?: string
+          password_set?: boolean
         }
         Relationships: [
           {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Loader2, Users, Mail, Key, Eye, EyeOff, Settings, Briefcase, Check } from "lucide-react";
+import { Plus, Trash2, Loader2, Users, Mail, Settings, Briefcase, Check, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +28,7 @@ interface Client {
   email: string;
   created_at: string;
   job_ids: string[];
+  password_set: boolean;
 }
 
 interface Job {
@@ -44,7 +45,6 @@ interface GerenciarClientesProps {
 
 const clientSchema = z.object({
   email: z.string().email("E-mail inválido"),
-  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
 });
 
 const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
@@ -57,11 +57,9 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [formErrors, setFormErrors] = useState<{ email?: string; password?: string }>({});
+  const [formErrors, setFormErrors] = useState<{ email?: string }>({});
   const [formData, setFormData] = useState({
     email: "",
-    password: "",
   });
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
   const [savingJobs, setSavingJobs] = useState(false);
@@ -84,7 +82,7 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
       // Get client_company_access for this company
       const { data: accessData, error } = await supabase
         .from("client_company_access")
-        .select("client_user_id, client_email, created_at")
+        .select("id, client_user_id, client_email, created_at, password_set")
         .eq("company_id", companyId);
 
       if (error) throw error;
@@ -95,19 +93,24 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
         return;
       }
 
-      // Fetch job access for each client
+      // Fetch job access for each client (only those with user_id set)
       const clientsList: Client[] = await Promise.all(
         accessData.map(async (access) => {
-          const { data: jobAccess } = await supabase
-            .from("client_job_access")
-            .select("job_id")
-            .eq("client_user_id", access.client_user_id);
+          let jobIds: string[] = [];
+          if (access.client_user_id) {
+            const { data: jobAccess } = await supabase
+              .from("client_job_access")
+              .select("job_id")
+              .eq("client_user_id", access.client_user_id);
+            jobIds = jobAccess?.map(j => j.job_id) || [];
+          }
 
           return {
-            id: access.client_user_id,
+            id: access.id,
             email: access.client_email || "Email não registrado",
             created_at: access.created_at,
-            job_ids: jobAccess?.map(j => j.job_id) || [],
+            job_ids: jobIds,
+            password_set: access.password_set,
           };
         })
       );
@@ -145,10 +148,9 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
 
     const result = clientSchema.safeParse(formData);
     if (!result.success) {
-      const errors: { email?: string; password?: string } = {};
+      const errors: { email?: string } = {};
       result.error.errors.forEach((err) => {
         if (err.path[0] === "email") errors.email = err.message;
-        if (err.path[0] === "password") errors.password = err.message;
       });
       setFormErrors(errors);
       return;
@@ -169,66 +171,52 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (!currentUser) throw new Error("Não autenticado");
 
-      // Create the client user via Supabase Auth
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/cliente/login`,
-          data: {
-            user_type: "client",
-          },
-        },
-      });
+      // Check if email already exists
+      const { data: existingAccess } = await supabase
+        .from("client_company_access")
+        .select("id")
+        .eq("client_email", formData.email)
+        .eq("company_id", companyId)
+        .single();
 
-      if (signUpError) throw signUpError;
-
-      if (!signUpData.user) {
-        throw new Error("Erro ao criar usuário");
+      if (existingAccess) {
+        toast({
+          title: "Atenção",
+          description: "Este e-mail já está cadastrado para esta empresa.",
+          variant: "destructive",
+        });
+        setCreating(false);
+        return;
       }
 
-      // Add client_company_access with email
-      const { error: accessError } = await supabase
+      // Create invitation (no user created yet)
+      const { data: accessData, error: accessError } = await supabase
         .from("client_company_access")
         .insert({
-          client_user_id: signUpData.user.id,
           company_id: companyId,
           created_by: currentUser.id,
           client_email: formData.email,
-        });
+          password_set: false,
+        })
+        .select()
+        .single();
 
       if (accessError) throw accessError;
 
-      // Add job access for selected jobs
-      const jobAccessInserts = selectedJobs.map(jobId => ({
-        client_user_id: signUpData.user!.id,
-        job_id: jobId,
-      }));
-
-      const { error: jobAccessError } = await supabase
-        .from("client_job_access")
-        .insert(jobAccessInserts);
-
-      if (jobAccessError) throw jobAccessError;
-
       toast({
-        title: "Cliente criado!",
-        description: `Credenciais enviadas para ${formData.email}`,
+        title: "Convite criado!",
+        description: `O cliente ${formData.email} pode acessar e criar sua senha.`,
       });
 
-      setFormData({ email: "", password: "" });
+      setFormData({ email: "" });
       setSelectedJobs([]);
       setDialogOpen(false);
       fetchData();
     } catch (error: any) {
       console.error("Error creating client:", error);
-      let message = "Não foi possível criar o cliente.";
-      if (error.message?.includes("already registered")) {
-        message = "Este e-mail já está cadastrado.";
-      }
       toast({
         title: "Erro",
-        description: message,
+        description: "Não foi possível criar o convite.",
         variant: "destructive",
       });
     } finally {
@@ -288,22 +276,23 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
     }
   };
 
-  const handleDeleteClient = async (clientId: string) => {
+  const handleDeleteClient = async (clientId: string, clientUserId?: string) => {
     if (!confirm("Tem certeza que deseja remover o acesso deste cliente?")) return;
 
     try {
-      // Delete job access first
-      await supabase
-        .from("client_job_access")
-        .delete()
-        .eq("client_user_id", clientId);
+      // Delete job access first (if user was created)
+      if (clientUserId) {
+        await supabase
+          .from("client_job_access")
+          .delete()
+          .eq("client_user_id", clientUserId);
+      }
 
-      // Delete company access
+      // Delete company access by id
       const { error } = await supabase
         .from("client_company_access")
         .delete()
-        .eq("client_user_id", clientId)
-        .eq("company_id", companyId);
+        .eq("id", clientId);
 
       if (error) throw error;
 
@@ -387,31 +376,11 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="client-password">Senha</Label>
-                <div className="relative">
-                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                  <Input
-                    id="client-password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Senha para o cliente"
-                    className="pl-10 pr-10"
-                    value={formData.password}
-                    onChange={handleChange}
-                    disabled={creating}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-                {formErrors.password && (
-                  <p className="text-sm text-destructive">{formErrors.password}</p>
-                )}
+              <div className="p-3 bg-muted/50 rounded-lg border border-border">
+                <p className="text-sm text-muted-foreground">
+                  <Clock className="inline-block mr-1" size={14} />
+                  O cliente receberá um convite e criará sua própria senha no primeiro acesso.
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -470,6 +439,7 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
             <TableHeader>
               <TableRow>
                 <TableHead>Email</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Vagas</TableHead>
                 <TableHead>Criado em</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -479,6 +449,19 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
               {clients.map((client) => (
                 <TableRow key={client.id}>
                   <TableCell className="font-medium">{client.email}</TableCell>
+                  <TableCell>
+                    {client.password_set ? (
+                      <span className="inline-flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
+                        <Check size={14} />
+                        Ativo
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-sm text-amber-600 dark:text-amber-400">
+                        <Clock size={14} />
+                        Pendente
+                      </span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <span className="text-sm text-muted-foreground">
                       {client.job_ids.length > 0 
@@ -493,6 +476,8 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
                         variant="outline"
                         size="sm"
                         onClick={() => handleEditClient(client)}
+                        disabled={!client.password_set}
+                        title={!client.password_set ? "Aguardando cliente criar senha" : "Editar vagas"}
                       >
                         <Settings size={16} />
                         Vagas
