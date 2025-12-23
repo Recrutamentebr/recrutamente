@@ -21,11 +21,11 @@ export const FounderSection = () => {
           {/* Left side - Photo */}
           <div className="flex justify-center">
             <div className="relative">
-              <div className="w-72 h-72 sm:w-80 sm:h-80 rounded-3xl overflow-hidden shadow-2xl">
+              <div className="w-72 sm:w-80 rounded-3xl overflow-hidden shadow-2xl bg-muted">
                 <img 
                   src={founderPhoto} 
                   alt="Fundador da Recrutamente" 
-                  className="w-full h-full object-cover object-top"
+                  className="w-full h-auto"
                 />
               </div>
               {/* Decorative elements */}
