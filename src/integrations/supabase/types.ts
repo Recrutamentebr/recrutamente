@@ -22,6 +22,7 @@ export type Database = {
           created_at: string
           education_level: string
           email: string
+          expectations: string | null
           experience: string
           full_name: string
           id: string
@@ -42,6 +43,7 @@ export type Database = {
           created_at?: string
           education_level: string
           email: string
+          expectations?: string | null
           experience: string
           full_name: string
           id?: string
@@ -62,6 +64,7 @@ export type Database = {
           created_at?: string
           education_level?: string
           email?: string
+          expectations?: string | null
           experience?: string
           full_name?: string
           id?: string

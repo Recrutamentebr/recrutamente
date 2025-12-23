@@ -123,9 +123,10 @@ const CandidaturaPage = () => {
         experience: formData.get("experiencia") as string,
         salary_expectation: formData.get("pretensao") as string || null,
         availability: formData.get("disponibilidade") as string || null,
+        expectations: formData.get("expectativas") as string,
         additional_info: formData.get("observacoes") as string || null,
         resume_url: resumeUrl,
-      });
+      } as any);
 
       if (error) throw error;
 
@@ -359,6 +360,18 @@ const CandidaturaPage = () => {
                       Informações Adicionais
                     </h2>
                     <div className="space-y-6">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">
+                          Quais são suas expectativas ao assumir este cargo? *
+                        </label>
+                        <Textarea
+                          name="expectativas"
+                          placeholder="Descreva suas expectativas para esta posição..."
+                          rows={3}
+                          required
+                          className="bg-background resize-none"
+                        />
+                      </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-foreground">
                           Observações ou informações adicionais
