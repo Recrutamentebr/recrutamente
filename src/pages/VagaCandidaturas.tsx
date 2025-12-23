@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ChevronLeft, Download, Mail, Phone, MapPin, Briefcase, Loader2, FileText, ExternalLink, Trash2 } from "lucide-react";
+import { ChevronLeft, Download, Mail, Phone, MapPin, Briefcase, Loader2, FileText, ExternalLink, Trash2, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -11,9 +11,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getQuestionLabel } from "@/data/customQuestions";
-import { FitCulturalAnalysis } from "@/components/FitCulturalAnalysis";
-import { CandidatoPDFReport } from "@/components/CandidatoPDFReport";
-import { generateCandidatePDF, calculateAnalysisData } from "@/utils/generateCandidatePDF";
 
 interface Application {
   id: string;
@@ -70,8 +67,6 @@ const VagaCandidaturasPage = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
-  const [generatingPDF, setGeneratingPDF] = useState(false);
-  const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!user || !company) {
@@ -214,32 +209,6 @@ const VagaCandidaturasPage = () => {
     }
   };
 
-  const handleGeneratePDF = async () => {
-    if (!selectedApplication || !job) return;
-    
-    setGeneratingPDF(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    try {
-      if (reportRef.current) {
-        await generateCandidatePDF(reportRef.current, selectedApplication, job);
-        toast({
-          title: "PDF gerado",
-          description: "O relatório foi baixado com sucesso.",
-        });
-      }
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível gerar o PDF.",
-        variant: "destructive",
-      });
-    } finally {
-      setGeneratingPDF(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -282,26 +251,65 @@ const VagaCandidaturasPage = () => {
                     {applications.length} candidatura{applications.length !== 1 ? "s" : ""}
                   </h2>
                   {applications.map((app) => (
-                    <button
+                    <div
                       key={app.id}
-                      onClick={() => setSelectedApplication(app)}
-                      className={`w-full text-left p-4 rounded-xl border transition-all ${
+                      className={`p-4 rounded-xl border transition-all ${
                         selectedApplication?.id === app.id
                           ? "bg-accent/10 border-accent"
                           : "bg-card border-border hover:border-accent/50"
                       }`}
                     >
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-medium text-foreground">{app.full_name}</h3>
-                        <span className={`text-xs px-2 py-1 rounded-full ${statusColors[app.status]}`}>
-                          {statusLabels[app.status]}
-                        </span>
+                      <button
+                        onClick={() => setSelectedApplication(app)}
+                        className="w-full text-left"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-medium text-foreground">{app.full_name}</h3>
+                          <span className={`text-xs px-2 py-1 rounded-full ${statusColors[app.status]}`}>
+                            {statusLabels[app.status]}
+                          </span>
+                        </div>
+                        <p className="text-muted-foreground text-sm">{app.email}</p>
+                        <p className="text-muted-foreground text-xs mt-1">
+                          {new Date(app.created_at).toLocaleDateString("pt-BR")}
+                        </p>
+                      </button>
+                      <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedApplication(app)}
+                        >
+                          <Edit size={14} />
+                          Editar
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm">
+                              <Trash2 size={14} />
+                              Excluir
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir candidatura?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta ação não pode ser desfeita. A candidatura de {app.full_name} será permanentemente removida.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteApplication(app.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
-                      <p className="text-muted-foreground text-sm">{app.email}</p>
-                      <p className="text-muted-foreground text-xs mt-1">
-                        {new Date(app.created_at).toLocaleDateString("pt-BR")}
-                      </p>
-                    </button>
+                    </div>
                   ))}
                 </div>
 
@@ -405,24 +413,7 @@ const VagaCandidaturasPage = () => {
                         </div>
                       )}
 
-                      {/* Fit Cultural Analysis */}
-                      <div className="mb-6 p-4 bg-secondary/30 rounded-xl">
-                        <FitCulturalAnalysis customAnswers={selectedApplication.custom_answers} />
-                      </div>
-
                       <div className="flex flex-wrap gap-3 pt-4 border-t border-border">
-                        <Button
-                          variant="default"
-                          onClick={handleGeneratePDF}
-                          disabled={generatingPDF}
-                        >
-                          {generatingPDF ? (
-                            <Loader2 size={16} className="animate-spin" />
-                          ) : (
-                            <FileText size={16} />
-                          )}
-                          Gerar Relatório PDF
-                        </Button>
                         {selectedApplication.resume_url && (
                           <Button
                             variant="outline"
@@ -546,18 +537,6 @@ Seja bem-vindo(a)!`)}`}
       </main>
       <Footer />
       <WhatsAppButton />
-      
-      {/* Hidden PDF Report for generation */}
-      {selectedApplication && job && (
-        <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
-          <CandidatoPDFReport
-            ref={reportRef}
-            application={selectedApplication}
-            job={job}
-            analysisData={calculateAnalysisData(selectedApplication.custom_answers)}
-          />
-        </div>
-      )}
     </div>
   );
 };
