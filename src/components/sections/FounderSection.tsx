@@ -47,7 +47,7 @@ export const FounderSection = () => {
                     <Linkedin size={20} />
                   </a>
                 </div>
-                <p className="text-muted-foreground text-sm">Bacharel em Direito</p>
+                <p className="text-muted-foreground text-sm">Fundador</p>
               </div>
             </div>
 
