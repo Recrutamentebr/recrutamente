@@ -74,12 +74,16 @@ serve(async (req) => {
         redirectUrl: siteUrl + "/vagas",
       });
 
-      return new Response(html, {
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "text/html; charset=utf-8",
-        },
-      });
+    return new Response(html, {
+      status: 200,
+      headers: new Headers({
+        ...corsHeaders,
+        "Cache-Control": "public, max-age=3600, s-maxage=3600",
+        "X-Content-Type-Options": "nosniff",
+        "X-Robots-Tag": "index, follow",
+        "Content-Type": "text/html; charset=utf-8",
+      }),
+    });
     }
 
     const title = `${job.title} | RecrutaMente`;
@@ -100,10 +104,14 @@ serve(async (req) => {
     console.log("Returning HTML with meta tags for:", job.title);
 
     return new Response(html, {
-      headers: {
+      status: 200,
+      headers: new Headers({
         ...corsHeaders,
+        "Cache-Control": "public, max-age=3600, s-maxage=3600",
+        "X-Content-Type-Options": "nosniff",
+        "X-Robots-Tag": "index, follow",
         "Content-Type": "text/html; charset=utf-8",
-      },
+      }),
     });
   } catch (error: unknown) {
     console.error("Error in og-meta function:", error);
