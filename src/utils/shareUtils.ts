@@ -14,49 +14,54 @@ export function getShareUrl(slug: string): string {
 
 /**
  * Generates the share URL used by social networks.
- * We use a clean URL on our own domain that redirects to the OG meta generator.
+ * Uses the actual job URL.
  */
 export function getOgShareUrl(slug: string): string {
-  return `${SITE_URL}${OG_SHARE_PATH}/${slug}`;
+  return getShareUrl(slug);
 }
 
 /**
  * Opens WhatsApp share dialog with the job link
- * Uses edge function URL for proper OG preview
  */
 export function shareViaWhatsApp(title: string, slug: string): void {
-  const url = getOgShareUrl(slug);
+  const url = getShareUrl(slug);
   const text = `Confira essa vaga: ${title}\n${url}`;
   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
 }
 
 /**
  * Opens LinkedIn share dialog with the job link
- * Uses edge function URL for proper OG preview
  */
 export function shareViaLinkedIn(slug: string): void {
-  const url = getOgShareUrl(slug);
-  window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, "_blank");
+  const url = getShareUrl(slug);
+  window.open(
+    `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
+    "_blank",
+  );
 }
 
 /**
  * Opens Facebook share dialog with the job link
- * Uses edge function URL for proper OG preview
  */
 export function shareViaFacebook(title: string, slug: string): void {
-  const url = getOgShareUrl(slug);
+  const url = getShareUrl(slug);
   const text = `Confira essa vaga: ${title}`;
-  window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`, "_blank");
+  window.open(
+    `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`,
+    "_blank",
+  );
 }
 
 /**
  * Opens Twitter/X share dialog with the job link
- * Uses edge function URL for proper OG preview
  */
 export function shareViaTwitter(title: string, slug: string): void {
-  const url = getOgShareUrl(slug);
+  const url = getShareUrl(slug);
   const text = `Confira essa vaga: ${title}`;
-  window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank");
+  window.open(
+    `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+    "_blank",
+  );
 }
 
 /**
