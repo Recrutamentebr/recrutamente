@@ -37,8 +37,8 @@ serve(async (req) => {
 
     console.log("Extracted slug:", slug);
 
-    // Get the site URL from environment or construct from request
-    const siteUrl = Deno.env.get("SITE_URL") || "https://recrutamente.lovable.app";
+    // Site URL for redirects and meta tags
+    const siteUrl = "https://recrutamente.site";
     
     if (!slug) {
       // No slug provided, redirect to main site
