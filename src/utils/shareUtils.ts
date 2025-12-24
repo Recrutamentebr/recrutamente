@@ -1,8 +1,8 @@
 // Site URL for sharing - uses the actual domain
 const SITE_URL = "https://recrutamente.site";
 
-// Edge function URL for OG meta tags (used internally for social preview)
-const EDGE_FUNCTION_BASE_URL = "https://rbokwvgkxndjzybgomnz.supabase.co/functions/v1/og-meta";
+// Path on our own domain that redirects to the OG meta generator (keeps the shared link clean)
+const OG_SHARE_PATH = "/compartilhar/vagas";
 
 /**
  * Generates the share URL for display and copying.
@@ -13,11 +13,11 @@ export function getShareUrl(slug: string): string {
 }
 
 /**
- * Generates the edge function URL for social media sharing.
- * This URL serves proper OG meta tags to crawlers.
+ * Generates the share URL used by social networks.
+ * We use a clean URL on our own domain that redirects to the OG meta generator.
  */
 export function getOgShareUrl(slug: string): string {
-  return `${EDGE_FUNCTION_BASE_URL}/vagas/${slug}`;
+  return `${SITE_URL}${OG_SHARE_PATH}/${slug}`;
 }
 
 /**
