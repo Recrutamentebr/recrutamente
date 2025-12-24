@@ -1,8 +1,38 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Instagram, Linkedin, Phone, Mail, MapPin } from "lucide-react";
 import logo from "@/assets/logo-recrutamente.png";
 
 export function Footer() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const scrollToSection = (sectionId: string) => {
+    if (location.pathname === "/") {
+      // Already on home page, just scroll
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    } else {
+      // Navigate to home and then scroll
+      navigate("/");
+      setTimeout(() => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+    }
+  };
+
+  const handleHomeClick = () => {
+    if (location.pathname === "/") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      navigate("/");
+    }
+  };
+
   return (
     <footer className="bg-primary text-primary-foreground">
       <div className="container mx-auto px-4 py-16">
@@ -39,15 +69,24 @@ export function Footer() {
           <div>
             <h4 className="font-bold text-lg mb-6">Links Rápidos</h4>
             <nav className="flex flex-col gap-3">
-              <Link to="/" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">
+              <button
+                onClick={handleHomeClick}
+                className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-left"
+              >
                 Home
-              </Link>
-              <Link to="/#quem-somos" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">
+              </button>
+              <button
+                onClick={() => scrollToSection("quem-somos")}
+                className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-left"
+              >
                 Quem Somos
-              </Link>
-              <Link to="/#servicos" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">
+              </button>
+              <button
+                onClick={() => scrollToSection("servicos")}
+                className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-left"
+              >
                 Serviços
-              </Link>
+              </button>
               <Link to="/vagas" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">
                 Banco de Talentos
               </Link>
