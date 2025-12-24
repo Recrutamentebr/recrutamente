@@ -9,16 +9,45 @@ export function ContactSection() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const formData = new FormData(e.currentTarget);
+    const name = (formData.get("name") as string)?.trim() || "";
+    const email = (formData.get("email") as string)?.trim() || "";
+    const phone = (formData.get("phone") as string)?.trim() || "";
+    const subject = (formData.get("subject") as string)?.trim() || "";
+    const message = (formData.get("message") as string)?.trim() || "";
+
+    // Validate inputs
+    if (!name || !email || !subject || !message) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha todos os campos obrigatórios.",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Build WhatsApp message
+    const whatsappMessage = `*Nova mensagem do site RecrutaMente*
+
+👤 *Nome:* ${name}
+📧 *E-mail:* ${email}${phone ? `\n📱 *Telefone:* ${phone}` : ""}
+📌 *Assunto:* ${subject}
+
+💬 *Mensagem:*
+${message}`;
+
+    const whatsappUrl = `https://wa.me/5581981985374?text=${encodeURIComponent(whatsappMessage)}`;
+    
+    window.open(whatsappUrl, "_blank");
 
     toast({
-      title: "Mensagem enviada!",
-      description: "Entraremos em contato em breve.",
+      title: "Redirecionando para o WhatsApp",
+      description: "Complete o envio da mensagem pelo WhatsApp.",
     });
 
     setIsSubmitting(false);
