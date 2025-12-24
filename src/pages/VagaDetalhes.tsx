@@ -13,6 +13,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import {
+  shareViaWhatsApp,
+  shareViaLinkedIn,
+  shareViaFacebook,
+  shareViaTwitter,
+  copyShareLink,
+} from "@/utils/shareUtils";
 
 interface Job {
   id: string;
@@ -139,45 +146,26 @@ const VagaDetalhes = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
-                  <DropdownMenuItem
-                    onClick={() => {
-                      const url = window.location.href;
-                      const text = `Confira essa vaga: ${job.title}`;
-                      window.open(`https://wa.me/?text=${encodeURIComponent(text + " " + url)}`, "_blank");
-                    }}
-                  >
+                  <DropdownMenuItem onClick={() => shareViaWhatsApp(job.title, job.slug)}>
                     WhatsApp
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      const url = window.location.href;
-                      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, "_blank");
-                    }}
-                  >
+                  <DropdownMenuItem onClick={() => shareViaLinkedIn(job.slug)}>
                     LinkedIn
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      const url = window.location.href;
-                      const text = `Confira essa vaga: ${job.title}`;
-                      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`, "_blank");
-                    }}
-                  >
+                  <DropdownMenuItem onClick={() => shareViaFacebook(job.title, job.slug)}>
                     Facebook
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      const url = window.location.href;
-                      const text = `Confira essa vaga: ${job.title}`;
-                      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank");
-                    }}
-                  >
+                  <DropdownMenuItem onClick={() => shareViaTwitter(job.title, job.slug)}>
                     X (Twitter)
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => {
-                      navigator.clipboard.writeText(window.location.href);
-                      toast.success("Link copiado!");
+                    onClick={async () => {
+                      const success = await copyShareLink(job.slug);
+                      if (success) {
+                        toast.success("Link copiado!");
+                      } else {
+                        toast.error("Erro ao copiar link");
+                      }
                     }}
                   >
                     Copiar link

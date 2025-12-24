@@ -9,28 +9,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Social media crawlers user agents
-const crawlerPatterns = [
-  "facebookexternalhit",
-  "Facebot",
-  "Twitterbot",
-  "WhatsApp",
-  "LinkedInBot",
-  "Slackbot",
-  "TelegramBot",
-  "Discordbot",
-  "Pinterest",
-  "Googlebot",
-  "bingbot",
-];
-
-function isCrawler(userAgent: string | null): boolean {
-  if (!userAgent) return false;
-  return crawlerPatterns.some((pattern) =>
-    userAgent.toLowerCase().includes(pattern.toLowerCase())
-  );
-}
-
 function truncateText(text: string, maxLength: number): string {
   if (!text) return "";
   if (text.length <= maxLength) return text;
@@ -53,21 +31,23 @@ serve(async (req) => {
     console.log("Request URL:", url.pathname);
     console.log("User-Agent:", userAgent);
 
-    // Extract slug from path (e.g., /vagas/desenvolvedor-frontend)
+    // Extract slug from path (e.g., /og-meta/vagas/desenvolvedor-frontend)
     const pathMatch = url.pathname.match(/\/vagas\/([^\/]+)/);
     const slug = pathMatch ? pathMatch[1] : null;
 
     console.log("Extracted slug:", slug);
 
-    // If not a crawler or no slug, redirect to the SPA
-    if (!isCrawler(userAgent) || !slug) {
-      const siteUrl = Deno.env.get("SITE_URL") || `https://${url.host}`;
-      console.log("Not a crawler or no slug, redirecting to:", siteUrl + url.pathname);
+    // Get the site URL from environment or construct from request
+    const siteUrl = Deno.env.get("SITE_URL") || "https://recrutamente.lovable.app";
+    
+    if (!slug) {
+      // No slug provided, redirect to main site
+      console.log("No slug provided, redirecting to main site");
       return new Response(null, {
         status: 302,
         headers: {
           ...corsHeaders,
-          Location: siteUrl + url.pathname,
+          Location: siteUrl,
         },
       });
     }
@@ -83,43 +63,41 @@ serve(async (req) => {
 
     console.log("Job data:", job, "Error:", error);
 
+    const jobUrl = `${siteUrl}/vagas/${slug}`;
+
     if (error || !job) {
-      // Return default meta tags if job not found
-      return new Response(
-        generateHtml({
-          title: "Vaga não encontrada | RecrutaMente",
-          description: "Esta vaga não está mais disponível. Confira outras oportunidades em RecrutaMente.",
-          url: url.href,
-        }),
-        {
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "text/html; charset=utf-8",
-          },
-        }
-      );
+      // Return HTML with redirect for job not found
+      const html = generateHtml({
+        title: "Vaga não encontrada | RecrutaMente",
+        description: "Esta vaga não está mais disponível. Confira outras oportunidades em RecrutaMente.",
+        url: siteUrl + "/vagas",
+        redirectUrl: siteUrl + "/vagas",
+      });
+
+      return new Response(html, {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "text/html; charset=utf-8",
+        },
+      });
     }
 
-    const siteUrl = Deno.env.get("SITE_URL") || `https://${url.host}`;
-    const jobUrl = `${siteUrl}/vagas/${slug}`;
     const title = `${job.title} | RecrutaMente`;
-    const description = truncateText(
-      stripHtml(job.description),
-      160
-    );
+    const description = truncateText(stripHtml(job.description), 160);
     const location = `${job.city}, ${job.state}`;
 
     const html = generateHtml({
       title,
       description: `${description} | ${job.type} • ${job.level} • ${location}`,
       url: jobUrl,
+      redirectUrl: jobUrl,
       type: job.type,
       level: job.level,
       area: job.area,
       location,
     });
 
-    console.log("Returning HTML for crawler");
+    console.log("Returning HTML with meta tags for:", job.title);
 
     return new Response(html, {
       headers: {
@@ -141,6 +119,7 @@ interface MetaData {
   title: string;
   description: string;
   url: string;
+  redirectUrl: string;
   type?: string;
   level?: string;
   area?: string;
@@ -151,11 +130,15 @@ function generateHtml(meta: MetaData): string {
   const siteName = "RecrutaMente";
   const logoUrl = "https://rbokwvgkxndjzybgomnz.supabase.co/storage/v1/object/public/assets/logo-recrutamente.png";
 
+  // HTML with meta tags for crawlers + instant redirect for real users
   return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Instant redirect for browsers (crawlers ignore this) -->
+  <meta http-equiv="refresh" content="0;url=${meta.redirectUrl}">
   
   <!-- Primary Meta Tags -->
   <title>${meta.title}</title>
@@ -172,7 +155,7 @@ function generateHtml(meta: MetaData): string {
   <meta property="og:locale" content="pt_BR">
   
   <!-- Twitter -->
-  <meta name="twitter:card" content="summary">
+  <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="${meta.url}">
   <meta name="twitter:title" content="${meta.title}">
   <meta name="twitter:description" content="${meta.description}">
@@ -182,6 +165,9 @@ function generateHtml(meta: MetaData): string {
   ${meta.type ? `<meta property="og:job:type" content="${meta.type}">` : ""}
   ${meta.level ? `<meta property="og:job:level" content="${meta.level}">` : ""}
   ${meta.location ? `<meta property="og:job:location" content="${meta.location}">` : ""}
+  
+  <!-- JavaScript redirect as fallback -->
+  <script>window.location.replace("${meta.redirectUrl}");</script>
 </head>
 <body>
   <h1>${meta.title}</h1>
@@ -189,7 +175,7 @@ function generateHtml(meta: MetaData): string {
   ${meta.location ? `<p>📍 ${meta.location}</p>` : ""}
   ${meta.type ? `<p>📋 ${meta.type}</p>` : ""}
   ${meta.level ? `<p>🎯 ${meta.level}</p>` : ""}
-  <a href="${meta.url}">Ver vaga completa</a>
+  <p>Redirecionando para <a href="${meta.redirectUrl}">${meta.redirectUrl}</a>...</p>
 </body>
 </html>`;
 }

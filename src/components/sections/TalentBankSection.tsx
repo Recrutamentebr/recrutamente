@@ -12,6 +12,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  shareViaWhatsApp,
+  shareViaLinkedIn,
+  shareViaFacebook,
+  shareViaTwitter,
+  copyShareLink,
+} from "@/utils/shareUtils";
 
 interface Job {
   id: string;
@@ -30,8 +37,6 @@ interface JobCardProps {
 }
 
 const JobCard = forwardRef<HTMLDivElement, JobCardProps>(({ job }, ref) => {
-  const jobUrl = `${window.location.origin}/vagas/${job.slug}`;
-
   return (
     <div ref={ref} className="bg-card rounded-2xl p-6 border border-border shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-1 group">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -63,8 +68,7 @@ const JobCard = forwardRef<HTMLDivElement, JobCardProps>(({ job }, ref) => {
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation();
-                    const text = `Confira essa vaga: ${job.title}`;
-                    window.open(`https://wa.me/?text=${encodeURIComponent(text + " " + jobUrl)}`, "_blank");
+                    shareViaWhatsApp(job.title, job.slug);
                   }}
                 >
                   WhatsApp
@@ -72,7 +76,7 @@ const JobCard = forwardRef<HTMLDivElement, JobCardProps>(({ job }, ref) => {
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation();
-                    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(jobUrl)}`, "_blank");
+                    shareViaLinkedIn(job.slug);
                   }}
                 >
                   LinkedIn
@@ -80,8 +84,7 @@ const JobCard = forwardRef<HTMLDivElement, JobCardProps>(({ job }, ref) => {
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation();
-                    const text = `Confira essa vaga: ${job.title}`;
-                    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(jobUrl)}&quote=${encodeURIComponent(text)}`, "_blank");
+                    shareViaFacebook(job.title, job.slug);
                   }}
                 >
                   Facebook
@@ -89,17 +92,20 @@ const JobCard = forwardRef<HTMLDivElement, JobCardProps>(({ job }, ref) => {
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation();
-                    const text = `Confira essa vaga: ${job.title}`;
-                    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(jobUrl)}`, "_blank");
+                    shareViaTwitter(job.title, job.slug);
                   }}
                 >
                   X (Twitter)
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.stopPropagation();
-                    navigator.clipboard.writeText(jobUrl);
-                    toast.success("Link copiado!");
+                    const success = await copyShareLink(job.slug);
+                    if (success) {
+                      toast.success("Link copiado!");
+                    } else {
+                      toast.error("Erro ao copiar link");
+                    }
                   }}
                 >
                   Copiar link
