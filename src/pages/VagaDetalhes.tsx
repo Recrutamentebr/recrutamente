@@ -1,11 +1,18 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ChevronLeft, MapPin, Briefcase, Clock, CheckCircle, Loader2 } from "lucide-react";
+import { ChevronLeft, MapPin, Briefcase, Clock, CheckCircle, Loader2, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 interface Job {
   id: string;
@@ -117,9 +124,67 @@ const VagaDetalhes = () => {
               </span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-primary-foreground mb-4">
-              {job.title}
-            </h1>
+            <div className="flex items-center gap-4 mb-4">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-primary-foreground">
+                {job.title}
+              </h1>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10"
+                  >
+                    <Share2 size={24} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const url = window.location.href;
+                      const text = `Confira essa vaga: ${job.title}`;
+                      window.open(`https://wa.me/?text=${encodeURIComponent(text + " " + url)}`, "_blank");
+                    }}
+                  >
+                    WhatsApp
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const url = window.location.href;
+                      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, "_blank");
+                    }}
+                  >
+                    LinkedIn
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const url = window.location.href;
+                      const text = `Confira essa vaga: ${job.title}`;
+                      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`, "_blank");
+                    }}
+                  >
+                    Facebook
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const url = window.location.href;
+                      const text = `Confira essa vaga: ${job.title}`;
+                      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank");
+                    }}
+                  >
+                    X (Twitter)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      navigator.clipboard.writeText(window.location.href);
+                      toast.success("Link copiado!");
+                    }}
+                  >
+                    Copiar link
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
 
             <div className="flex flex-wrap items-center gap-6 text-primary-foreground/80">
               <span className="flex items-center gap-2">
