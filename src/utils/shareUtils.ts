@@ -26,8 +26,8 @@ export function getOgShareUrl(slug: string): string {
  */
 export function shareViaWhatsApp(title: string, slug: string): void {
   const url = getOgShareUrl(slug);
-  const text = `Confira essa vaga: ${title}`;
-  window.open(`https://wa.me/?text=${encodeURIComponent(text + " " + url)}`, "_blank");
+  const text = `Confira essa vaga: ${title}\n${url}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
 }
 
 /**

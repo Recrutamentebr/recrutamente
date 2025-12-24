@@ -33,7 +33,12 @@ serve(async (req) => {
 
     // Extract slug from path (e.g., /og-meta/vagas/desenvolvedor-frontend)
     const pathMatch = url.pathname.match(/\/vagas\/([^\/]+)/);
-    const slug = pathMatch ? pathMatch[1] : null;
+    let slug = pathMatch ? pathMatch[1] : null;
+    
+    // Sanitize slug: decode URI, trim, take only first token before spaces
+    if (slug) {
+      slug = decodeURIComponent(slug).trim().split(/\s+/)[0];
+    }
 
     console.log("Extracted slug:", slug);
 
@@ -136,7 +141,7 @@ interface MetaData {
 
 function generateHtml(meta: MetaData): string {
   const siteName = "RecrutaMente";
-  const logoUrl = "https://rbokwvgkxndjzybgomnz.supabase.co/storage/v1/object/public/assets/logo-recrutamente.png";
+  const logoUrl = "https://recrutamente.site/logo-og.png";
 
   // HTML with meta tags for crawlers + instant redirect for real users
   return `<!DOCTYPE html>
