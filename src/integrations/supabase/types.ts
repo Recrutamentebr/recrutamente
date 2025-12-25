@@ -327,6 +327,10 @@ export type Database = {
         Args: { _job_id: string; _user_id: string }
         Returns: boolean
       }
+      transfer_pending_jobs_to_access: {
+        Args: { p_access_id: string; p_client_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "company" | "candidate" | "client"
