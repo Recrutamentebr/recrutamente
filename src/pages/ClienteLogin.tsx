@@ -23,8 +23,13 @@ const passwordSchema = z.object({
   path: ["confirmPassword"],
 });
 
+const loginSchema = z.object({
+  email: z.string().email("E-mail inválido"),
+  password: z.string().min(1, "Digite sua senha"),
+});
+
 type Mode = "select" | "register" | "login";
-type Step = "email" | "create-password" | "enter-password";
+type Step = "email" | "create-password";
 
 const ClienteLoginPage = () => {
   const navigate = useNavigate();
@@ -105,59 +110,6 @@ const ClienteLoginPage = () => {
 
       setInvitationData({ id: accessData.id, company_id: accessData.company_id, pending_job_ids: (accessData.pending_job_ids as string[]) || [] });
       setStep("create-password");
-    } catch (error) {
-      console.error("Error checking email:", error);
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao verificar o e-mail.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleLoginEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormErrors({});
-
-    const result = emailSchema.safeParse({ email });
-    if (!result.success) {
-      setFormErrors({ email: result.error.errors[0].message });
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      // Check if there's an account for this email
-      const { data: accessData, error } = await supabase
-        .from("client_company_access")
-        .select("id, company_id, password_set, client_user_id")
-        .eq("client_email", email)
-        .single();
-
-      if (error || !accessData) {
-        toast({
-          title: "Conta não encontrada",
-          description: "Este e-mail não está cadastrado. Verifique o e-mail ou entre em contato com a empresa.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      if (!accessData.password_set || !accessData.client_user_id) {
-        toast({
-          title: "Conta não ativada",
-          description: "Este e-mail ainda não criou uma senha. Use a opção 'Primeiro acesso' para cadastrar.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      setStep("enter-password");
     } catch (error) {
       console.error("Error checking email:", error);
       toast({
@@ -325,8 +277,14 @@ const ClienteLoginPage = () => {
     e.preventDefault();
     setFormErrors({});
 
-    if (!password) {
-      setFormErrors({ password: "Digite sua senha" });
+    const result = loginSchema.safeParse({ email, password });
+    if (!result.success) {
+      const errors: { email?: string; password?: string } = {};
+      result.error.errors.forEach((err) => {
+        if (err.path[0] === "email") errors.email = err.message;
+        if (err.path[0] === "password") errors.password = err.message;
+      });
+      setFormErrors(errors);
       return;
     }
 
@@ -417,8 +375,7 @@ const ClienteLoginPage = () => {
               {mode === "select" && "Escolha uma opção para continuar"}
               {mode === "register" && step === "email" && "Digite o e-mail cadastrado pelo administrador"}
               {mode === "register" && step === "create-password" && "Crie sua senha para ativar a conta"}
-              {mode === "login" && step === "email" && "Digite seu e-mail para entrar"}
-              {mode === "login" && step === "enter-password" && "Digite sua senha para entrar"}
+              {mode === "login" && "Digite seu e-mail e senha para entrar"}
             </p>
 
             {/* Mode Selection */}
@@ -574,9 +531,9 @@ const ClienteLoginPage = () => {
               </form>
             )}
 
-            {/* Login Flow - Email Step */}
-            {mode === "login" && step === "email" && (
-              <form onSubmit={handleLoginEmailSubmit} className="space-y-6">
+            {/* Login Flow - Email and Password */}
+            {mode === "login" && (
+              <form onSubmit={handleLogin} className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="login-email">E-mail</Label>
                   <div className="relative">
@@ -589,7 +546,7 @@ const ClienteLoginPage = () => {
                       value={email}
                       onChange={(e) => {
                         setEmail(e.target.value);
-                        setFormErrors({});
+                        setFormErrors((prev) => ({ ...prev, email: undefined }));
                       }}
                       disabled={isLoading}
                     />
@@ -597,34 +554,6 @@ const ClienteLoginPage = () => {
                   {formErrors.email && (
                     <p className="text-sm text-destructive">{formErrors.email}</p>
                   )}
-                </div>
-
-                <div className="flex gap-2">
-                  <Button type="button" variant="outline" onClick={handleBack} disabled={isLoading}>
-                    <ArrowLeft size={18} />
-                  </Button>
-                  <Button type="submit" className="flex-1" disabled={isLoading}>
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="animate-spin mr-2" size={18} />
-                        Verificando...
-                      </>
-                    ) : (
-                      "Continuar"
-                    )}
-                  </Button>
-                </div>
-              </form>
-            )}
-
-            {/* Login Flow - Password Step */}
-            {mode === "login" && step === "enter-password" && (
-              <form onSubmit={handleLogin} className="space-y-6">
-                <div className="p-3 bg-muted/50 rounded-lg border border-border mb-4">
-                  <p className="text-sm text-muted-foreground">
-                    <Mail className="inline-block mr-1" size={14} />
-                    {email}
-                  </p>
                 </div>
 
                 <div className="space-y-2">
