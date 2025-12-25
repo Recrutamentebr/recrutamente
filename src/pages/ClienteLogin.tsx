@@ -167,37 +167,26 @@ const ClienteLoginPage = () => {
         throw new Error("Erro ao criar usuário");
       }
 
-      // Update client_company_access with user_id and mark password as set
-      const { error: updateError } = await supabase
-        .from("client_company_access")
-        .update({
-          client_user_id: signUpData.user.id,
-          password_set: true,
-        })
-        .eq("id", invitationData.id);
-
-      if (updateError) throw updateError;
-
-      // Transfer pending job access to client_job_access using RPC
-      if (invitationData.pending_job_ids && invitationData.pending_job_ids.length > 0) {
-        await supabase.rpc('transfer_pending_jobs_to_access', {
-          p_client_user_id: signUpData.user!.id,
-          p_access_id: invitationData.id,
-        });
-      }
-
-      toast({
-        title: "Conta ativada!",
-        description: "Sua conta foi criada com sucesso. Entrando...",
-      });
-
-      // Auto-login
+      // Auto-login first to get authenticated session
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (signInError) throw signInError;
+
+      // Use RPC to activate client access (handles update + job transfer securely)
+      const { error: activateError } = await supabase.rpc('activate_client_access_for_current_user');
+      
+      if (activateError) {
+        console.error("Error activating client access:", activateError);
+        // Don't throw - user is still logged in, just log the error
+      }
+
+      toast({
+        title: "Conta ativada!",
+        description: "Sua conta foi criada com sucesso. Entrando...",
+      });
 
       navigate("/cliente");
     } catch (error: any) {
@@ -224,22 +213,12 @@ const ClienteLoginPage = () => {
             return;
           }
 
-          if (signInData?.user && invitationData) {
-            // Update client_company_access with the existing user id
-            await supabase
-              .from("client_company_access")
-              .update({
-                client_user_id: signInData.user.id,
-                password_set: true,
-              })
-              .eq("id", invitationData.id);
-
-            // Transfer pending job access using RPC
-            if (invitationData.pending_job_ids && invitationData.pending_job_ids.length > 0) {
-              await supabase.rpc('transfer_pending_jobs_to_access', {
-                p_client_user_id: signInData.user.id,
-                p_access_id: invitationData.id,
-              });
+          if (signInData?.user) {
+            // Use RPC to activate client access securely
+            const { error: activateError } = await supabase.rpc('activate_client_access_for_current_user');
+            
+            if (activateError) {
+              console.error("Error activating client access:", activateError);
             }
 
             toast({
@@ -313,6 +292,14 @@ const ClienteLoginPage = () => {
           variant: "destructive",
         });
         return;
+      }
+
+      // Activate any pending invitations for this user (in case they were invited after creating account)
+      const { error: activateError } = await supabase.rpc('activate_client_access_for_current_user');
+      
+      if (activateError) {
+        console.error("Error activating client access:", activateError);
+        // Don't block login, just log the error
       }
 
       toast({
