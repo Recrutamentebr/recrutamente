@@ -300,6 +300,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_client_access_for_current_user: {
+        Args: never
+        Returns: undefined
+      }
       has_client_job_access: {
         Args: { _job_id: string; _user_id: string }
         Returns: boolean
