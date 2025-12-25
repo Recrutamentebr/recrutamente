@@ -494,7 +494,6 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
             <TableHeader>
               <TableRow>
                 <TableHead>Email</TableHead>
-                <TableHead>Status</TableHead>
                 <TableHead>Vagas</TableHead>
                 <TableHead>Criado em</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -504,19 +503,6 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
               {clients.map((client) => (
                 <TableRow key={client.id}>
                   <TableCell className="font-medium">{client.email}</TableCell>
-                  <TableCell>
-                    {client.password_set ? (
-                      <span className="inline-flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
-                        <Check size={14} />
-                        Ativo
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-sm text-amber-600 dark:text-amber-400">
-                        <Clock size={14} />
-                        Pendente
-                      </span>
-                    )}
-                  </TableCell>
                   <TableCell>
                     <span className="text-sm text-muted-foreground">
                       {client.job_ids.length > 0 
