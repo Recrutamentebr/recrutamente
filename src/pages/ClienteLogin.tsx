@@ -168,16 +168,12 @@ const ClienteLoginPage = () => {
 
       if (updateError) throw updateError;
 
-      // Transfer pending job access to client_job_access
+      // Transfer pending job access to client_job_access using RPC
       if (invitationData.pending_job_ids && invitationData.pending_job_ids.length > 0) {
-        const jobAccessInserts = invitationData.pending_job_ids.map(jobId => ({
-          client_user_id: signUpData.user!.id,
-          job_id: jobId,
-        }));
-
-        await supabase
-          .from("client_job_access")
-          .insert(jobAccessInserts);
+        await supabase.rpc('transfer_pending_jobs_to_access', {
+          p_client_user_id: signUpData.user!.id,
+          p_access_id: invitationData.id,
+        });
       }
 
       toast({
@@ -228,16 +224,12 @@ const ClienteLoginPage = () => {
               })
               .eq("id", invitationData.id);
 
-            // Transfer pending job access
+            // Transfer pending job access using RPC
             if (invitationData.pending_job_ids && invitationData.pending_job_ids.length > 0) {
-              const jobAccessInserts = invitationData.pending_job_ids.map(jobId => ({
-                client_user_id: signInData.user.id,
-                job_id: jobId,
-              }));
-
-              await supabase
-                .from("client_job_access")
-                .upsert(jobAccessInserts, { onConflict: 'client_user_id,job_id' });
+              await supabase.rpc('transfer_pending_jobs_to_access', {
+                p_client_user_id: signInData.user.id,
+                p_access_id: invitationData.id,
+              });
             }
 
             toast({
