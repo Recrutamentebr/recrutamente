@@ -67,6 +67,38 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
 
   useEffect(() => {
     fetchData();
+
+    // Subscribe to realtime updates for client status changes
+    const channel = supabase
+      .channel('client-status-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'client_company_access',
+          filter: `company_id=eq.${companyId}`,
+        },
+        (payload) => {
+          // Update the client in the list when their status changes
+          setClients((prevClients) =>
+            prevClients.map((client) =>
+              client.id === payload.new.id
+                ? {
+                    ...client,
+                    password_set: payload.new.password_set,
+                    client_user_id: payload.new.client_user_id,
+                  }
+                : client
+            )
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [companyId]);
 
   const fetchData = async () => {
