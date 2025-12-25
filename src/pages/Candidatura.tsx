@@ -60,12 +60,14 @@ const CandidaturaPage = () => {
   const [file, setFile] = useState<File | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string>("");
   const [customAnswers, setCustomAnswers] = useState<Record<string, string>>({});
+  const [isLoadingJobs, setIsLoadingJobs] = useState(true);
 
   useEffect(() => {
     fetchJobs();
   }, [slug]);
 
   const fetchJobs = async () => {
+    setIsLoadingJobs(true);
     const { data } = await supabase
       .from("jobs")
       .select("id, slug, title, city, state, custom_questions")
@@ -82,6 +84,7 @@ const CandidaturaPage = () => {
       setJob(found || null);
       if (found) setSelectedJobId(found.id);
     }
+    setIsLoadingJobs(false);
   };
 
   const handleJobChange = (jobId: string) => {
@@ -371,9 +374,15 @@ const CandidaturaPage = () => {
                         <label className="text-sm font-medium text-foreground">
                           Vaga de Interesse *
                         </label>
-                        <Select value={selectedJobId} onValueChange={handleJobChange} required>
+                        <Select 
+                          key={selectedJobId || 'loading'} 
+                          value={selectedJobId} 
+                          onValueChange={handleJobChange} 
+                          required
+                          disabled={isLoadingJobs}
+                        >
                           <SelectTrigger className="bg-background h-12">
-                            <SelectValue placeholder="Selecione uma vaga" />
+                            <SelectValue placeholder={isLoadingJobs ? "Carregando vagas..." : "Selecione uma vaga"} />
                           </SelectTrigger>
                           <SelectContent>
                             {jobs.map((j) => (
