@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Loader2, Lock, Mail, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, Loader2, Lock, Mail, ArrowLeft, UserPlus, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,12 +23,14 @@ const passwordSchema = z.object({
   path: ["confirmPassword"],
 });
 
-type Step = "email" | "create-password" | "login";
+type Mode = "select" | "register" | "login";
+type Step = "email" | "create-password" | "enter-password";
 
 const ClienteLoginPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
+  const [mode, setMode] = useState<Mode>("select");
   const [step, setStep] = useState<Step>("email");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -61,7 +63,7 @@ const ClienteLoginPage = () => {
     checkExistingSession();
   }, [navigate]);
 
-  const handleEmailSubmit = async (e: React.FormEvent) => {
+  const handleRegisterEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormErrors({});
 
@@ -84,7 +86,17 @@ const ClienteLoginPage = () => {
       if (error || !accessData) {
         toast({
           title: "Acesso não autorizado",
-          description: "Este e-mail não tem permissão para acessar o portal.",
+          description: "Este e-mail não foi cadastrado pelo administrador. Entre em contato com a empresa.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (accessData.password_set && accessData.client_user_id) {
+        toast({
+          title: "Conta já existe",
+          description: "Este e-mail já possui uma conta. Use a opção 'Já tenho conta' para entrar.",
           variant: "destructive",
         });
         setIsLoading(false);
@@ -92,14 +104,60 @@ const ClienteLoginPage = () => {
       }
 
       setInvitationData({ id: accessData.id, company_id: accessData.company_id, pending_job_ids: (accessData.pending_job_ids as string[]) || [] });
+      setStep("create-password");
+    } catch (error) {
+      console.error("Error checking email:", error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao verificar o e-mail.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      if (accessData.password_set && accessData.client_user_id) {
-        // User already created password, show login form
-        setStep("login");
-      } else {
-        // First access, show create password form
-        setStep("create-password");
+  const handleLoginEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormErrors({});
+
+    const result = emailSchema.safeParse({ email });
+    if (!result.success) {
+      setFormErrors({ email: result.error.errors[0].message });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Check if there's an account for this email
+      const { data: accessData, error } = await supabase
+        .from("client_company_access")
+        .select("id, company_id, password_set, client_user_id")
+        .eq("client_email", email)
+        .single();
+
+      if (error || !accessData) {
+        toast({
+          title: "Conta não encontrada",
+          description: "Este e-mail não está cadastrado. Verifique o e-mail ou entre em contato com a empresa.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
       }
+
+      if (!accessData.password_set || !accessData.client_user_id) {
+        toast({
+          title: "Conta não ativada",
+          description: "Este e-mail ainda não criou uma senha. Use a opção 'Primeiro acesso' para cadastrar.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      setStep("enter-password");
     } catch (error) {
       console.error("Error checking email:", error);
       toast({
@@ -203,13 +261,13 @@ const ClienteLoginPage = () => {
           });
 
           if (signInError) {
-            // Password is wrong, redirect to login
             toast({
               title: "Usuário já registrado",
-              description: "Este e-mail já está registrado. Digite sua senha para entrar.",
+              description: "Este e-mail já está registrado. Use a opção 'Já tenho conta' para entrar.",
               variant: "destructive",
             });
-            setStep("login");
+            setMode("select");
+            setStep("email");
             setIsLoading(false);
             return;
           }
@@ -249,7 +307,8 @@ const ClienteLoginPage = () => {
           description: "Este e-mail já está registrado. Tente fazer login.",
           variant: "destructive",
         });
-        setStep("login");
+        setMode("select");
+        setStep("email");
       } else {
         toast({
           title: "Erro",
@@ -309,7 +368,7 @@ const ClienteLoginPage = () => {
       toast({
         title: "Erro no login",
         description: error.message === "Invalid login credentials" 
-          ? "Senha incorreta." 
+          ? "E-mail ou senha incorretos." 
           : "Ocorreu um erro ao fazer login.",
         variant: "destructive",
       });
@@ -319,10 +378,18 @@ const ClienteLoginPage = () => {
   };
 
   const handleBack = () => {
-    setStep("email");
-    setPassword("");
-    setConfirmPassword("");
-    setFormErrors({});
+    if (step !== "email") {
+      setStep("email");
+      setPassword("");
+      setConfirmPassword("");
+      setFormErrors({});
+    } else {
+      setMode("select");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+      setFormErrors({});
+    }
   };
 
   if (checkingAuth) {
@@ -347,13 +414,40 @@ const ClienteLoginPage = () => {
               Portal do Cliente
             </h1>
             <p className="text-muted-foreground text-center mb-8">
-              {step === "email" && "Digite seu e-mail para acessar"}
-              {step === "create-password" && "Crie sua senha para ativar a conta"}
-              {step === "login" && "Digite sua senha para entrar"}
+              {mode === "select" && "Escolha uma opção para continuar"}
+              {mode === "register" && step === "email" && "Digite o e-mail cadastrado pelo administrador"}
+              {mode === "register" && step === "create-password" && "Crie sua senha para ativar a conta"}
+              {mode === "login" && step === "email" && "Digite seu e-mail para entrar"}
+              {mode === "login" && step === "enter-password" && "Digite sua senha para entrar"}
             </p>
 
-            {step === "email" && (
-              <form onSubmit={handleEmailSubmit} className="space-y-6">
+            {/* Mode Selection */}
+            {mode === "select" && (
+              <div className="space-y-4">
+                <Button
+                  variant="outline"
+                  className="w-full h-auto py-4 flex flex-col items-center gap-2"
+                  onClick={() => setMode("register")}
+                >
+                  <UserPlus className="text-accent" size={24} />
+                  <span className="font-semibold">Primeiro acesso</span>
+                  <span className="text-xs text-muted-foreground">Criar minha senha</span>
+                </Button>
+                
+                <Button
+                  className="w-full h-auto py-4 flex flex-col items-center gap-2"
+                  onClick={() => setMode("login")}
+                >
+                  <LogIn size={24} />
+                  <span className="font-semibold">Já tenho conta</span>
+                  <span className="text-xs opacity-80">Entrar no painel</span>
+                </Button>
+              </div>
+            )}
+
+            {/* Register Flow - Email Step */}
+            {mode === "register" && step === "email" && (
+              <form onSubmit={handleRegisterEmailSubmit} className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="email">E-mail</Label>
                   <div className="relative">
@@ -376,20 +470,26 @@ const ClienteLoginPage = () => {
                   )}
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="animate-spin mr-2" size={18} />
-                      Verificando...
-                    </>
-                  ) : (
-                    "Continuar"
-                  )}
-                </Button>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" onClick={handleBack} disabled={isLoading}>
+                    <ArrowLeft size={18} />
+                  </Button>
+                  <Button type="submit" className="flex-1" disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="animate-spin mr-2" size={18} />
+                        Verificando...
+                      </>
+                    ) : (
+                      "Continuar"
+                    )}
+                  </Button>
+                </div>
               </form>
             )}
 
-            {step === "create-password" && (
+            {/* Register Flow - Create Password Step */}
+            {mode === "register" && step === "create-password" && (
               <form onSubmit={handleCreatePassword} className="space-y-6">
                 <div className="p-3 bg-muted/50 rounded-lg border border-border mb-4">
                   <p className="text-sm text-muted-foreground">
@@ -474,7 +574,51 @@ const ClienteLoginPage = () => {
               </form>
             )}
 
-            {step === "login" && (
+            {/* Login Flow - Email Step */}
+            {mode === "login" && step === "email" && (
+              <form onSubmit={handleLoginEmailSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="login-email">E-mail</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                    <Input
+                      id="login-email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      className="pl-10"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setFormErrors({});
+                      }}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  {formErrors.email && (
+                    <p className="text-sm text-destructive">{formErrors.email}</p>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" onClick={handleBack} disabled={isLoading}>
+                    <ArrowLeft size={18} />
+                  </Button>
+                  <Button type="submit" className="flex-1" disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="animate-spin mr-2" size={18} />
+                        Verificando...
+                      </>
+                    ) : (
+                      "Continuar"
+                    )}
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            {/* Login Flow - Password Step */}
+            {mode === "login" && step === "enter-password" && (
               <form onSubmit={handleLogin} className="space-y-6">
                 <div className="p-3 bg-muted/50 rounded-lg border border-border mb-4">
                   <p className="text-sm text-muted-foreground">
