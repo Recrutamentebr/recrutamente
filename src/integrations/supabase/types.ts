@@ -215,6 +215,7 @@ export type Database = {
           external_form_url: string | null
           id: string
           is_active: boolean
+          is_deleted: boolean
           level: string
           requirements: string | null
           responsibilities: string | null
@@ -236,6 +237,7 @@ export type Database = {
           external_form_url?: string | null
           id?: string
           is_active?: boolean
+          is_deleted?: boolean
           level?: string
           requirements?: string | null
           responsibilities?: string | null
@@ -257,6 +259,7 @@ export type Database = {
           external_form_url?: string | null
           id?: string
           is_active?: boolean
+          is_deleted?: boolean
           level?: string
           requirements?: string | null
           responsibilities?: string | null

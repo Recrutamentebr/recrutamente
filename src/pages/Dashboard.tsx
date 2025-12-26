@@ -67,6 +67,7 @@ const DashboardPage = () => {
         .from("jobs")
         .select("*")
         .eq("company_id", company.id)
+        .eq("is_deleted", false)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -97,26 +98,26 @@ const DashboardPage = () => {
   };
 
   const handleDeleteJob = async (jobId: string) => {
-    if (!confirm("Tem certeza que deseja excluir esta vaga?")) return;
+    if (!confirm("Tem certeza que deseja arquivar esta vaga? As candidaturas serão preservadas.")) return;
 
     try {
       const { error } = await supabase
         .from("jobs")
-        .delete()
+        .update({ is_deleted: true, is_active: false })
         .eq("id", jobId);
 
       if (error) throw error;
 
       setJobs(jobs.filter((j) => j.id !== jobId));
       toast({
-        title: "Vaga excluída",
-        description: "A vaga foi excluída com sucesso.",
+        title: "Vaga arquivada",
+        description: "A vaga foi arquivada e as candidaturas foram preservadas.",
       });
     } catch (error) {
-      console.error("Error deleting job:", error);
+      console.error("Error archiving job:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível excluir a vaga.",
+        description: "Não foi possível arquivar a vaga.",
         variant: "destructive",
       });
     }
@@ -341,6 +342,7 @@ const DashboardPage = () => {
                               variant="destructive"
                               size="sm"
                               onClick={() => handleDeleteJob(job.id)}
+                              title="Arquivar vaga"
                             >
                               <Trash2 size={16} />
                             </Button>
