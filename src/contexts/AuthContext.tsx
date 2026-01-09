@@ -32,25 +32,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (!isMounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         // Defer Supabase calls with setTimeout
         if (session?.user) {
           setTimeout(() => {
-            fetchCompanyProfile(session.user.id);
+            if (isMounted) {
+              fetchCompanyProfile(session.user.id);
+            }
           }, 0);
         } else {
           setCompany(null);
         }
+        
+        // Ensure loading is set to false after auth state change
+        setLoading(false);
       }
     );
 
     // THEN check for existing session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!isMounted) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -58,9 +69,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await fetchCompanyProfile(session.user.id);
       }
       setLoading(false);
+    }).catch(() => {
+      if (isMounted) {
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchCompanyProfile = async (userId: string) => {
