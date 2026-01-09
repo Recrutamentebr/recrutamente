@@ -1,4 +1,4 @@
-import { useState, useEffect, forwardRef } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Search, MapPin, Briefcase, ChevronRight, Filter, Loader2, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,9 +36,9 @@ interface JobCardProps {
   job: Job;
 }
 
-const JobCard = forwardRef<HTMLDivElement, JobCardProps>(({ job }, ref) => {
+const JobCard = ({ job }: JobCardProps) => {
   return (
-    <div ref={ref} className="bg-card rounded-2xl p-6 border border-border shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-1 group">
+    <div className="bg-card rounded-2xl p-6 border border-border shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-1 group">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="flex-1">
           <div className="flex flex-wrap gap-2 mb-3">
@@ -134,9 +134,7 @@ const JobCard = forwardRef<HTMLDivElement, JobCardProps>(({ job }, ref) => {
       </div>
     </div>
   );
-});
-
-JobCard.displayName = "JobCard";
+};
 
 export function TalentBankSection() {
   const [jobs, setJobs] = useState<Job[]>([]);
