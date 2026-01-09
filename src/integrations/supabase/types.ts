@@ -28,6 +28,8 @@ export type Database = {
           full_name: string
           id: string
           job_id: string
+          lgpd_consent_at: string | null
+          lgpd_consent_ip: string | null
           linkedin_url: string | null
           phone: string
           portfolio_url: string | null
@@ -50,6 +52,8 @@ export type Database = {
           full_name: string
           id?: string
           job_id: string
+          lgpd_consent_at?: string | null
+          lgpd_consent_ip?: string | null
           linkedin_url?: string | null
           phone: string
           portfolio_url?: string | null
@@ -72,6 +76,8 @@ export type Database = {
           full_name?: string
           id?: string
           job_id?: string
+          lgpd_consent_at?: string | null
+          lgpd_consent_ip?: string | null
           linkedin_url?: string | null
           phone?: string
           portfolio_url?: string | null
@@ -134,18 +140,21 @@ export type Database = {
       }
       client_job_access: {
         Row: {
+          can_edit: boolean | null
           client_user_id: string
           created_at: string
           id: string
           job_id: string
         }
         Insert: {
+          can_edit?: boolean | null
           client_user_id: string
           created_at?: string
           id?: string
           job_id: string
         }
         Update: {
+          can_edit?: boolean | null
           client_user_id?: string
           created_at?: string
           id?: string
@@ -157,6 +166,47 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_terms_acceptance: {
+        Row: {
+          accepted_at: string | null
+          client_user_id: string
+          company_id: string
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          term_text: string
+          term_version: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          client_user_id: string
+          company_id: string
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          term_text: string
+          term_version?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          client_user_id?: string
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          term_text?: string
+          term_version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_terms_acceptance_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { 
   LogOut, 
   Loader2, 
@@ -12,7 +12,8 @@ import {
   MapPin,
   GraduationCap,
   Clock,
-  FileText
+  FileText,
+  Edit
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/Header";
@@ -26,6 +27,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import ClientTermsDialog from "@/components/ClientTermsDialog";
 
 interface Job {
   id: string;
@@ -36,6 +38,7 @@ interface Job {
   type: string;
   level: string;
   company_id: string;
+  can_edit?: boolean;
 }
 
 interface Application {
@@ -84,6 +87,9 @@ const ClientePortalPage = () => {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [showTermsDialog, setShowTermsDialog] = useState(false);
+  const [companyId, setCompanyId] = useState<string | null>(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   useEffect(() => {
     checkAuthAndFetchData();
@@ -111,10 +117,36 @@ const ClientePortalPage = () => {
         return;
       }
 
+      // Get company access to find company_id
+      const { data: companyAccess } = await supabase
+        .from("client_company_access")
+        .select("company_id")
+        .eq("client_user_id", session.user.id)
+        .limit(1)
+        .single();
+
+      if (companyAccess?.company_id) {
+        setCompanyId(companyAccess.company_id);
+
+        // Check if terms have been accepted
+        const { data: termsData } = await supabase
+          .from("client_terms_acceptance")
+          .select("id")
+          .eq("client_user_id", session.user.id)
+          .eq("company_id", companyAccess.company_id)
+          .limit(1);
+
+        if (!termsData || termsData.length === 0) {
+          setShowTermsDialog(true);
+        } else {
+          setTermsAccepted(true);
+        }
+      }
+
       // Fetch job access for this client (specific jobs, not all from company)
       const { data: jobAccessData } = await supabase
         .from("client_job_access")
-        .select("job_id")
+        .select("job_id, can_edit")
         .eq("client_user_id", session.user.id);
 
       if (!jobAccessData || jobAccessData.length === 0) {
@@ -123,6 +155,7 @@ const ClientePortalPage = () => {
       }
 
       const jobIds = jobAccessData.map(a => a.job_id);
+      const editableJobIds = jobAccessData.filter(a => a.can_edit).map(a => a.job_id);
 
       // Fetch jobs that the client has access to
       const { data: jobsData } = await supabase
@@ -131,7 +164,12 @@ const ClientePortalPage = () => {
         .in("id", jobIds)
         .order("created_at", { ascending: false });
 
-      setJobs(jobsData || []);
+      const jobsWithEdit = (jobsData || []).map(job => ({
+        ...job,
+        can_edit: editableJobIds.includes(job.id)
+      }));
+
+      setJobs(jobsWithEdit);
 
       // Fetch applications for those jobs
       if (jobsData && jobsData.length > 0) {
@@ -194,6 +232,11 @@ const ClientePortalPage = () => {
     }
   };
 
+  const handleTermsAccepted = () => {
+    setShowTermsDialog(false);
+    setTermsAccepted(true);
+  };
+
   const getJobApplications = (jobId: string) => {
     return applications.filter(a => a.job_id === jobId);
   };
@@ -210,6 +253,15 @@ const ClientePortalPage = () => {
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-1 pt-20 bg-secondary">
+        {/* Terms Dialog */}
+        {showTermsDialog && companyId && (
+          <ClientTermsDialog 
+            open={showTermsDialog} 
+            onAccepted={handleTermsAccepted}
+            companyId={companyId}
+          />
+        )}
+
         {/* Header */}
         <section className="bg-hero-gradient py-8">
           <div className="container mx-auto px-4">
@@ -278,11 +330,16 @@ const ClientePortalPage = () => {
                           <div>
                             <div className="flex flex-wrap gap-2 mb-2">
                               <span className="px-3 py-1 bg-accent/10 text-accent text-xs font-semibold rounded-full">
-                                {job.type}
+                                {job.type || "Não informado"}
                               </span>
                               <span className="px-3 py-1 bg-secondary text-secondary-foreground text-xs font-semibold rounded-full">
                                 {job.level}
                               </span>
+                              {job.can_edit && (
+                                <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
+                                  Pode editar
+                                </span>
+                              )}
                             </div>
                             <h3 className="font-bold text-foreground text-lg">{job.title}</h3>
                             <p className="text-muted-foreground text-sm">
@@ -290,6 +347,14 @@ const ClientePortalPage = () => {
                             </p>
                           </div>
                           <div className="flex items-center gap-4">
+                            {job.can_edit && (
+                              <Button variant="outline" size="sm" asChild>
+                                <Link to={`/cliente/vagas/${job.id}/editar`}>
+                                  <Edit size={16} />
+                                  Editar
+                                </Link>
+                              </Button>
+                            )}
                             <div className="text-center">
                               <p className="text-2xl font-bold text-accent">{jobApps.length}</p>
                               <p className="text-xs text-muted-foreground">candidaturas</p>
@@ -448,8 +513,11 @@ const ClientePortalPage = () => {
                   </Button>
                 )}
                 {selectedApplication.resume_url && (
-                  <Button onClick={() => handleDownloadResume(selectedApplication.resume_url!, selectedApplication.full_name)}>
-                    <Download size={18} />
+                  <Button 
+                    variant="outline"
+                    onClick={() => handleDownloadResume(selectedApplication.resume_url!, selectedApplication.full_name)}
+                  >
+                    <Download size={16} />
                     Baixar Currículo
                   </Button>
                 )}
