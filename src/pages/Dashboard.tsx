@@ -24,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import GerenciarClientes from "@/components/GerenciarClientes";
 import TodasCandidaturas from "@/components/TodasCandidaturas";
+import TermsAcceptanceList from "@/components/TermsAcceptanceList";
 
 interface Job {
   id: string;
@@ -45,7 +46,7 @@ const DashboardPage = () => {
   
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(true);
-  const [activeTab, setActiveTab] = useState<"jobs" | "applications" | "profile" | "clients">("jobs");
+  const [activeTab, setActiveTab] = useState<"jobs" | "applications" | "profile" | "clients" | "terms">("jobs");
 
   useEffect(() => {
     if (!loading && !user) {
@@ -257,6 +258,13 @@ const DashboardPage = () => {
                 Gerenciar Clientes
               </Button>
               <Button
+                variant={activeTab === "terms" ? "default" : "outline"}
+                onClick={() => setActiveTab("terms")}
+              >
+                <FileText size={18} />
+                Aceites de Termos
+              </Button>
+              <Button
                 variant={activeTab === "profile" ? "default" : "outline"}
                 onClick={() => setActiveTab("profile")}
               >
@@ -379,6 +387,11 @@ const DashboardPage = () => {
             {/* Clients Tab */}
             {activeTab === "clients" && (
               <GerenciarClientes companyId={company.id} />
+            )}
+
+            {/* Terms Acceptance Tab */}
+            {activeTab === "terms" && (
+              <TermsAcceptanceList companyId={company.id} />
             )}
 
             {/* Profile Tab */}

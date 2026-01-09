@@ -17,6 +17,7 @@ import EditarVaga from "./pages/EditarVaga";
 import EditarPerfil from "./pages/EditarPerfil";
 import ClienteLogin from "./pages/ClienteLogin";
 import ClientePortal from "./pages/ClientePortal";
+import ClienteEditarVaga from "./pages/ClienteEditarVaga";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/dashboard/perfil" element={<EditarPerfil />} />
             <Route path="/cliente/login" element={<ClienteLogin />} />
             <Route path="/cliente" element={<ClientePortal />} />
+            <Route path="/cliente/vagas/:id/editar" element={<ClienteEditarVaga />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
