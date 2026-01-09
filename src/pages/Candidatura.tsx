@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ChevronLeft, Upload, CheckCircle } from "lucide-react";
+import { ChevronLeft, Upload, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { customQuestionsSections, getQuestionById } from "@/data/customQuestions";
 import { ScoredQuestion } from "@/types/customQuestions";
+import LGPDConsentDialog from "@/components/LGPDConsentDialog";
 
 interface CustomQuestionsData {
   predefinedQuestions?: string[];
@@ -61,6 +62,9 @@ const CandidaturaPage = () => {
   const [selectedJobId, setSelectedJobId] = useState<string>("");
   const [customAnswers, setCustomAnswers] = useState<Record<string, string>>({});
   const [isLoadingJobs, setIsLoadingJobs] = useState(true);
+  const [lgpdConsent, setLgpdConsent] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchJobs();
@@ -96,15 +100,46 @@ const CandidaturaPage = () => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
+    setUploadError(null);
+    
     if (selectedFile) {
-      if (selectedFile.size > 5 * 1024 * 1024) {
+      // Check file size (10MB max for mobile compatibility)
+      if (selectedFile.size > 10 * 1024 * 1024) {
+        setUploadError("O arquivo deve ter no máximo 10MB.");
         toast({
           title: "Arquivo muito grande",
-          description: "O arquivo deve ter no máximo 5MB.",
+          description: "O arquivo deve ter no máximo 10MB.",
           variant: "destructive",
         });
+        e.target.value = '';
         return;
       }
+      
+      // Check file type
+      const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'image/jpeg',
+        'image/png',
+        'image/heic',
+        'image/heif'
+      ];
+      
+      const fileExtension = selectedFile.name.split('.').pop()?.toLowerCase();
+      const allowedExtensions = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'heic', 'heif'];
+      
+      if (!allowedTypes.includes(selectedFile.type) && !allowedExtensions.includes(fileExtension || '')) {
+        setUploadError("Formato não suportado. Use PDF, DOC, DOCX ou imagem.");
+        toast({
+          title: "Formato inválido",
+          description: "Use arquivos PDF, DOC, DOCX, JPG ou PNG.",
+          variant: "destructive",
+        });
+        e.target.value = '';
+        return;
+      }
+      
       setFile(selectedFile);
       setFileName(selectedFile.name);
     }
@@ -117,6 +152,7 @@ const CandidaturaPage = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setUploadProgress(null);
 
     try {
       const formData = new FormData(e.currentTarget);
@@ -131,19 +167,40 @@ const CandidaturaPage = () => {
         return;
       }
 
+      if (!lgpdConsent) {
+        toast({
+          title: "Consentimento LGPD",
+          description: "Você precisa concordar com os termos de consentimento LGPD para continuar.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       let resumeUrl = null;
       if (file) {
+        setUploadProgress("Enviando currículo...");
         const fileExt = file.name.split(".").pop();
         const filePath = `${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
         
         const { error: uploadError } = await supabase.storage
           .from("resumes")
-          .upload(filePath, file);
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error("Upload error:", uploadError);
+          setUploadProgress(null);
+          throw new Error("Falha ao enviar currículo. Tente novamente.");
+        }
         resumeUrl = filePath;
+        setUploadProgress("Currículo enviado!");
       }
 
+      setUploadProgress("Salvando candidatura...");
+      
       const { error } = await supabase.from("applications").insert({
         job_id: selectedJobId,
         full_name: formData.get("nome") as string,
@@ -159,10 +216,12 @@ const CandidaturaPage = () => {
         additional_info: formData.get("observacoes") as string || null,
         resume_url: resumeUrl,
         custom_answers: Object.keys(customAnswers).length > 0 ? customAnswers : null,
+        lgpd_consent_at: new Date().toISOString(),
       } as any);
 
       if (error) throw error;
 
+      setUploadProgress(null);
       setSubmittedName(formData.get("nome") as string);
       setIsSubmitted(true);
       toast({
@@ -566,43 +625,75 @@ const CandidaturaPage = () => {
                     </h2>
                     <div className="space-y-4">
                       <label className="text-sm font-medium text-foreground">
-                        Envie seu currículo (PDF ou DOC - máx. 5MB) *
+                        Envie seu currículo (PDF, DOC, DOCX ou imagem - máx. 10MB) *
                       </label>
                       <div className="relative">
                         <input
                           type="file"
-                          accept=".pdf,.doc,.docx"
+                          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.heic,.heif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/*"
                           onChange={handleFileChange}
                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                           required
                         />
-                        <div className="flex items-center gap-4 p-4 bg-background rounded-xl border-2 border-dashed border-border hover:border-accent transition-colors">
-                          <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center">
-                            <Upload className="text-accent" size={24} />
+                        <div className={`flex items-center gap-4 p-4 bg-background rounded-xl border-2 border-dashed transition-colors ${uploadError ? 'border-destructive' : 'border-border hover:border-accent'}`}>
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${uploadError ? 'bg-destructive/10' : 'bg-accent/10'}`}>
+                            {uploadError ? (
+                              <AlertCircle className="text-destructive" size={24} />
+                            ) : (
+                              <Upload className="text-accent" size={24} />
+                            )}
                           </div>
                           <div className="flex-1">
-                            {fileName ? (
+                            {uploadError ? (
+                              <p className="text-destructive font-medium">{uploadError}</p>
+                            ) : fileName ? (
                               <p className="text-foreground font-medium">{fileName}</p>
                             ) : (
                               <>
                                 <p className="text-foreground font-medium">Clique para selecionar um arquivo</p>
-                                <p className="text-muted-foreground text-sm">ou arraste e solte aqui</p>
+                                <p className="text-muted-foreground text-sm">PDF, DOC, DOCX ou imagem (máx. 10MB)</p>
                               </>
                             )}
                           </div>
                         </div>
                       </div>
+                      {uploadProgress && (
+                        <div className="flex items-center gap-2 text-sm text-accent">
+                          <Loader2 className="animate-spin" size={16} />
+                          {uploadProgress}
+                        </div>
+                      )}
                     </div>
+                  </div>
+
+                  {/* LGPD Consent */}
+                  <div>
+                    <h2 className="font-bold text-xl text-foreground mb-6 pb-4 border-b border-border">
+                      Consentimento
+                    </h2>
+                    <LGPDConsentDialog 
+                      consented={lgpdConsent} 
+                      onConsentChange={setLgpdConsent} 
+                    />
                   </div>
 
                   {/* Submit */}
                   <div className="pt-6 border-t border-border">
-                    <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
-                      {isSubmitting ? "Enviando candidatura..." : "Enviar Candidatura"}
+                    <Button type="submit" size="lg" className="w-full" disabled={isSubmitting || !lgpdConsent}>
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="animate-spin mr-2" size={18} />
+                          Enviando candidatura...
+                        </>
+                      ) : (
+                        "Enviar Candidatura"
+                      )}
                     </Button>
-                    <p className="text-muted-foreground text-xs text-center mt-4">
-                      Ao enviar, você concorda em ter seus dados armazenados em nosso banco de talentos para futuras oportunidades.
-                    </p>
+                    {!lgpdConsent && (
+                      <p className="text-amber-600 text-xs text-center mt-4">
+                        Você precisa concordar com os termos de consentimento LGPD para enviar sua candidatura.
+                      </p>
+                    )}
                   </div>
                 </form>
               </div>

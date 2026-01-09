@@ -34,7 +34,7 @@ const areas = [
   "Jurídico",
 ];
 
-const types = ["CLT", "PJ", "Temporário", "Estágio", "Trainee"];
+const types = ["CLT", "PJ", "Temporário", "Estágio", "Trainee", "Part-time", "A Combinar"];
 const levels = ["Júnior", "Pleno", "Sênior", "Especialista", "Gerente", "Diretor"];
 
 const states = [
@@ -184,7 +184,7 @@ const EditarVagaPage = () => {
     e.preventDefault();
     
     if (!formData.title || !formData.description || !formData.area || 
-        !formData.city || !formData.state || !formData.type || !formData.level) {
+        !formData.city || !formData.state || !formData.level) {
       toast({
         title: "Campos obrigatórios",
         description: "Preencha todos os campos obrigatórios.",
@@ -342,13 +342,14 @@ const EditarVagaPage = () => {
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-foreground">
-                          Tipo de Contrato *
+                          Tipo de Contrato
                         </label>
                         <Select value={formData.type} onValueChange={(v) => handleChange("type", v)}>
                           <SelectTrigger className="h-12 bg-background">
-                            <SelectValue placeholder="Selecione o tipo" />
+                            <SelectValue placeholder="Selecione o tipo (opcional)" />
                           </SelectTrigger>
                           <SelectContent>
+                            <SelectItem value="">Não informado</SelectItem>
                             {types.map((type) => (
                               <SelectItem key={type} value={type}>{type}</SelectItem>
                             ))}

@@ -30,6 +30,12 @@ interface Client {
   created_at: string;
   job_ids: string[];
   password_set: boolean;
+  can_edit: boolean;
+}
+
+interface JobAccess {
+  job_id: string;
+  can_edit: boolean;
 }
 
 interface Job {
@@ -63,6 +69,7 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
     email: "",
   });
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
+  const [editableJobs, setEditableJobs] = useState<string[]>([]);
   const [savingJobs, setSavingJobs] = useState(false);
 
   useEffect(() => {
@@ -130,14 +137,16 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
       const clientsList: Client[] = await Promise.all(
         accessData.map(async (access) => {
           let jobIds: string[] = [];
+          let canEdit = false;
           
           if (access.password_set && access.client_user_id) {
             // User activated - get from client_job_access
             const { data: jobAccess } = await supabase
               .from("client_job_access")
-              .select("job_id")
+              .select("job_id, can_edit")
               .eq("client_user_id", access.client_user_id);
             jobIds = jobAccess?.map(j => j.job_id) || [];
+            canEdit = jobAccess?.some(j => j.can_edit) || false;
           } else {
             // Pending invitation - get from pending_job_ids
             jobIds = (access.pending_job_ids as string[]) || [];
@@ -150,6 +159,7 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
             created_at: access.created_at,
             job_ids: jobIds,
             password_set: access.password_set,
+            can_edit: canEdit,
           };
         })
       );
@@ -175,6 +185,18 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
 
   const handleJobToggle = (jobId: string) => {
     setSelectedJobs(prev => 
+      prev.includes(jobId) 
+        ? prev.filter(id => id !== jobId)
+        : [...prev, jobId]
+    );
+    // Also remove from editable if unchecking
+    if (selectedJobs.includes(jobId)) {
+      setEditableJobs(prev => prev.filter(id => id !== jobId));
+    }
+  };
+
+  const handleEditableToggle = (jobId: string) => {
+    setEditableJobs(prev => 
       prev.includes(jobId) 
         ? prev.filter(id => id !== jobId)
         : [...prev, jobId]
@@ -264,9 +286,23 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
     }
   };
 
-  const handleEditClient = (client: Client) => {
+  const handleEditClient = async (client: Client) => {
     setSelectedClient(client);
     setSelectedJobs(client.job_ids);
+    
+    // Fetch editable jobs for this client
+    if (client.password_set && client.client_user_id) {
+      const { data: jobAccess } = await supabase
+        .from("client_job_access")
+        .select("job_id, can_edit")
+        .eq("client_user_id", client.client_user_id);
+      
+      const editableJobIds = jobAccess?.filter(j => j.can_edit).map(j => j.job_id) || [];
+      setEditableJobs(editableJobIds);
+    } else {
+      setEditableJobs([]);
+    }
+    
     setEditDialogOpen(true);
   };
 
@@ -287,6 +323,7 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
           const jobAccessInserts = selectedJobs.map(jobId => ({
             client_user_id: selectedClient.client_user_id!,
             job_id: jobId,
+            can_edit: editableJobs.includes(jobId),
           }));
 
           const { error } = await supabase
@@ -559,7 +596,10 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
             </p>
             
             <div className="space-y-2">
-              <Label>Vagas que o cliente pode visualizar</Label>
+              <Label>Vagas e Permissões</Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Selecione as vagas que o cliente pode visualizar. Marque "Pode editar" para permitir que o cliente edite a vaga.
+              </p>
               {jobs.length > 0 ? (
                 <div className="border border-border rounded-lg max-h-64 overflow-y-auto">
                   {jobs.map((job) => (
@@ -576,6 +616,18 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
                         <p className="font-medium text-foreground text-sm">{job.title}</p>
                         <p className="text-xs text-muted-foreground">{job.area} • {job.city}, {job.state}</p>
                       </label>
+                      {selectedJobs.includes(job.id) && selectedClient?.password_set && (
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id={`edit-permission-${job.id}`}
+                            checked={editableJobs.includes(job.id)}
+                            onCheckedChange={() => handleEditableToggle(job.id)}
+                          />
+                          <label htmlFor={`edit-permission-${job.id}`} className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">
+                            Pode editar
+                          </label>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -583,6 +635,15 @@ const GerenciarClientes = ({ companyId }: GerenciarClientesProps) => {
                 <p className="text-sm text-muted-foreground">Nenhuma vaga cadastrada.</p>
               )}
             </div>
+
+            {!selectedClient?.password_set && (
+              <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                <p className="text-sm text-amber-700">
+                  <Clock className="inline-block mr-1" size={14} />
+                  Este cliente ainda não ativou a conta. A permissão de edição só pode ser configurada após a ativação.
+                </p>
+              </div>
+            )}
 
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
