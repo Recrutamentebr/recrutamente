@@ -12,6 +12,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { customQuestionsSections } from "@/data/customQuestions";
@@ -44,13 +45,19 @@ const states = [
 ];
 
 const NovaVagaPage = () => {
-  const { company, user } = useAuth();
+  const { company, user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
   const [scoredQuestions, setScoredQuestions] = useState<ScoredQuestion[]>([]);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/auth");
+    }
+  }, [user, loading, navigate]);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -170,9 +177,12 @@ const NovaVagaPage = () => {
     }
   };
 
-  if (!user || !company) {
-    navigate("/auth");
-    return null;
+  if (loading || !company) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="animate-spin text-accent" size={48} />
+      </div>
+    );
   }
 
   return (
