@@ -148,7 +148,7 @@ const NovaVagaPage = () => {
         area: formData.area,
         city: formData.city,
         state: formData.state,
-        type: formData.type,
+        type: formData.type === "nao_informado" ? null : formData.type || null,
         level: formData.level,
         salary_range: formData.salary_range || null,
         external_form_url: formData.form_type === "external" ? formData.external_form_url : null,
@@ -254,7 +254,7 @@ const NovaVagaPage = () => {
                             <SelectValue placeholder="Selecione o tipo (opcional)" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Não informado</SelectItem>
+                            <SelectItem value="nao_informado">Não informado</SelectItem>
                             {types.map((type) => (
                               <SelectItem key={type} value={type}>{type}</SelectItem>
                             ))}
